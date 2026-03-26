@@ -79,10 +79,6 @@ body {
   animation: rise-up 560ms ease;
 }
 
-.switcher-panel.is-hidden {
-  display: none;
-}
-
 .switcher-head {
   margin-bottom: 0.8rem;
   display: flex;
@@ -313,6 +309,13 @@ body {
     radial-gradient(1500px 560px at 6% -20%, rgba(34, 126, 194, 0.58), transparent 56%),
     radial-gradient(1200px 520px at 115% 0%, rgba(29, 98, 170, 0.5), transparent 60%),
     linear-gradient(170deg, #073764 0%, #03274b 100%);
+}
+
+.app-shell:fullscreen .switcher-panel {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  backdrop-filter: blur(10px);
 }
 
 .app-shell:fullscreen #systemFrame {

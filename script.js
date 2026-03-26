@@ -23,11 +23,9 @@
 ];
 
 const appShell = document.querySelector(".app-shell");
-const switcherPanel = document.querySelector(".switcher-panel");
 const systemsGrid = document.querySelector("#systemsGrid");
 const viewerTitle = document.querySelector("#viewerTitle");
 const framesContainer = document.querySelector("#framesContainer");
-const openExternalLink = document.querySelector("#openExternalLink");
 const fullscreenToggle = document.querySelector("#fullscreenToggle");
 const viewModeSingle = document.querySelector("#viewModeSingle");
 const viewModeMulti = document.querySelector("#viewModeMulti");
@@ -55,26 +53,6 @@ const createFrame = (url, title, id = "") => {
   return iframe;
 };
 
-const setOpenLink = (url) => {
-  if (isMultiView) {
-    openExternalLink.href = "#";
-    openExternalLink.classList.add("is-disabled");
-    openExternalLink.setAttribute("aria-disabled", "true");
-    return;
-  }
-
-  if (isValidUrl(url)) {
-    openExternalLink.href = url;
-    openExternalLink.classList.remove("is-disabled");
-    openExternalLink.setAttribute("aria-disabled", "false");
-    return;
-  }
-
-  openExternalLink.href = "#";
-  openExternalLink.classList.add("is-disabled");
-  openExternalLink.setAttribute("aria-disabled", "true");
-};
-
 const updateUiState = () => {
   const cards = systemsGrid.querySelectorAll(".system-card");
   cards.forEach((card) => {
@@ -85,7 +63,6 @@ const updateUiState = () => {
 
   viewModeSingle.classList.toggle("is-active", !isMultiView);
   viewModeMulti.classList.toggle("is-active", isMultiView);
-  switcherPanel.classList.toggle("is-hidden", isMultiView);
 };
 
 const renderSystem = (systemId) => {
@@ -104,7 +81,6 @@ const renderSystem = (systemId) => {
   framesContainer.appendChild(iframe);
 
   updateUiState();
-  setOpenLink(system.url);
 };
 
 const createMultiTile = (system) => {
@@ -141,7 +117,6 @@ const renderMultiView = () => {
   });
 
   updateUiState();
-  setOpenLink("");
 };
 
 const cardTemplate = (system) => {
@@ -187,7 +162,6 @@ const setupViewToggle = () => {
 
 const setupKeyboardShortcuts = () => {
   document.addEventListener("keydown", (event) => {
-    if (isMultiView) return;
     if (event.ctrlKey || event.altKey || event.metaKey) return;
 
     const targetTag = document.activeElement?.tagName;
