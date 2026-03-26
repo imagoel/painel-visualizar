@@ -9,8 +9,8 @@
   {
     id: "sistema-2",
     name: "Sistema 2",
-    subtitle: "Aguardando link final",
-    url: "",
+    subtitle: "Monitoramento da arrecadacao",
+    url: "http://sim.amargosa.ba.gov.br/monitoramento/arrecadacao",
     logo: "",
   },
   {
