@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  visualizador:
+    image: visualizador-sistemas:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: visualizador-sistemas
+    ports:
+      - "8080:80"
+    restart: unless-stopped

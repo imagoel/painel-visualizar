@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel de Sistemas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a" aria-hidden="true"></div>
+    <div class="bg-orb orb-b" aria-hidden="true"></div>
+    <main class="app-shell">
+      <header class="hero">
+        <img src="assets/navbar.png" alt="Logo C2" class="hero-logo" />
+        <h1>Visualizador de Sistemas</h1>
+        <p>Selecione um sistema para visualizar no painel principal.</p>
+      </header>
+
+      <section class="switcher-panel" aria-label="Selecao de sistemas">
+        <div class="switcher-head">
+          <p class="switcher-title">Sistemas disponiveis</p>
+          <p class="switcher-help">Atalhos: teclas 1, 2 e 3</p>
+        </div>
+        <div id="systemsGrid" class="systems-grid"></div>
+      </section>
+
+      <section class="viewer-panel">
+        <div class="viewer-header">
+          <div>
+            <p class="viewer-label">Sistema selecionado</p>
+            <h2 id="viewerTitle">-</h2>
+          </div>
+          <div class="viewer-actions">
+            <div class="view-mode-toggle" role="group" aria-label="Modo de exibicao">
+              <button id="viewModeSingle" class="mode-btn is-active" type="button">Individual</button>
+              <button id="viewModeMulti" class="mode-btn" type="button">Simultaneo</button>
+            </div>
+            <div class="view-mode-toggle" id="layoutToggle" style="display: none;" role="group" aria-label="Layout Simultaneo">
+              <button id="layoutRow" class="mode-btn is-active" type="button">Lado a Lado</button>
+              <button id="layoutCol" class="mode-btn" type="button">Empilhado</button>
+            </div>
+            <button id="fullscreenToggle" class="open-link" type="button">Tela cheia</button>
+            <a
+              id="openExternalLink"
+              class="open-link is-disabled"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-disabled="true"
+              >Abrir em nova aba</a
+            >
+          </div>
+        </div>
+
+        <p class="viewer-note">
+          Dica: se algum sistema bloquear a exibicao interna, use "Abrir em nova aba".
+        </p>
+
+        <div id="framesContainer" class="frame-shell">
+          <iframe
+            id="systemFrame"
+            title="Visualizacao do sistema selecionado"
+            loading="lazy"
+          ></iframe>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
