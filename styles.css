@@ -289,12 +289,6 @@ body {
   opacity: 0.45;
 }
 
-.viewer-note {
-  margin: 0 0 0.8rem;
-  color: var(--muted);
-  font-size: 0.86rem;
-}
-
 .frame-shell {
   position: relative;
 }
