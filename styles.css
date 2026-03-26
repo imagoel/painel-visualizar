@@ -12,39 +12,30 @@ body {
   overflow: hidden;
 }
 
-.tv-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  width: 100vw;
-  height: 100vh;
-  background: #111;
-}
-
-.tv-tile {
+/* Container fullscreen */
+.tv-stage {
   position: relative;
-  overflow: hidden;
-  background: #0a1929;
-  outline: none;
-  transition: box-shadow 120ms ease;
-  cursor: pointer;
-}
-
-/* Tile com foco (navegação por setas) */
-.tv-tile.is-focused {
-  box-shadow: inset 0 0 0 4px rgba(21, 212, 255, 0.9);
-  z-index: 2;
-}
-
-/* Tile em tela cheia individual */
-.tv-tile.is-fullscreen {
-  position: fixed;
-  inset: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 100;
-  border: none;
-  box-shadow: none;
+  background: #000;
+}
+
+/* Cada tile ocupa 100% do stage, empilhado */
+.tv-tile {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 600ms ease;
+}
+
+/* Tile ativo: visível e interagível */
+.tv-tile.is-active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
 }
 
 .tv-tile iframe {
@@ -52,6 +43,49 @@ body {
   height: 100%;
   border: none;
   display: block;
+}
+
+/* ── Indicadores de slide (pontinhos na parte inferior) ─────────────────── */
+.tv-dots {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 99;
+  opacity: 0.7;
+  transition: opacity 300ms;
+}
+
+.tv-dots:hover {
+  opacity: 1;
+}
+
+.tv-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: background 300ms, transform 300ms;
+}
+
+.tv-dot.is-active {
+  background: rgba(21, 212, 255, 0.95);
+  transform: scale(1.3);
+}
+
+/* ── Barra de progresso do slide atual ──────────────────────────────────── */
+.tv-progress {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: rgba(21, 212, 255, 0.8);
+  z-index: 99;
+  transition: width linear;
 }
 
 /* Placeholder para sistemas sem link */
@@ -65,17 +99,10 @@ body {
   gap: 0.75rem;
   color: rgba(150, 190, 220, 0.6);
   font-family: "Segoe UI", sans-serif;
-  font-size: 1rem;
+  font-size: 1.1rem;
   background: linear-gradient(145deg, #071d30, #030f1e);
 }
 
 .tv-placeholder svg {
-  opacity: 0.35;
-}
-
-/* Fullscreen */
-:fullscreen .tv-grid,
-:-webkit-full-screen .tv-grid {
-  width: 100vw;
-  height: 100vh;
+  opacity: 0.3;
 }

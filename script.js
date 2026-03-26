@@ -1,4 +1,7 @@
-// ─── Configuração dos sistemas ────────────────────────────────────────────────
+// ─── Configuração ─────────────────────────────────────────────────────────────
+const SLIDE_DURATION = 30_000; // ms por slide (30 segundos)
+const INACTIVITY_TIMEOUT = 30_000; // ms de inatividade para retomar (30 segundos)
+
 const systems = [
   {
     id: "c2",
@@ -18,125 +21,128 @@ const systems = [
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const isValidUrl = (value) =>
-  typeof value === "string" && /^https?:\/\/.+/i.test(value.trim());
+const isValidUrl = (v) =>
+  typeof v === "string" && /^https?:\/\/.+/i.test(v.trim());
 
-// ─── Estado ───────────────────────────────────────────────────────────────────
-let focusedIndex = 0;   // coluna atualmente selecionada (0-2)
-let isExpanded = false; // true quando uma coluna está em tela cheia
+// ─── Elementos do DOM ─────────────────────────────────────────────────────────
+const stage = document.getElementById("stage");
+const dotsEl = document.getElementById("dots");
+const progressEl = document.getElementById("progress");
 
-// ─── Renderização ─────────────────────────────────────────────────────────────
-const grid = document.getElementById("grid");
-const tiles = [];
-
-const buildTile = (system) => {
+// ─── Renderização dos tiles ───────────────────────────────────────────────────
+const tiles = systems.map((sys) => {
   const tile = document.createElement("div");
   tile.className = "tv-tile";
-  tile.setAttribute("tabindex", "-1");
 
-  if (isValidUrl(system.url)) {
+  if (isValidUrl(sys.url)) {
     const iframe = document.createElement("iframe");
-    iframe.src = system.url;
-    iframe.title = system.name;
+    iframe.src = sys.url;
+    iframe.title = sys.name;
     iframe.loading = "lazy";
-    iframe.setAttribute("allowfullscreen", "");
     tile.appendChild(iframe);
   } else {
     const ph = document.createElement("div");
     ph.className = "tv-placeholder";
     ph.innerHTML = `
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
         <rect x="2" y="3" width="20" height="14" rx="2"/>
         <path d="M8 21h8M12 17v4"/>
       </svg>
-      <span>${system.name}</span>
+      <span>${sys.name}</span>
       <small>Link ainda não configurado</small>`;
     tile.appendChild(ph);
   }
 
+  stage.appendChild(tile);
   return tile;
-};
-
-systems.forEach((sys) => {
-  const tile = buildTile(sys);
-  grid.appendChild(tile);
-  tiles.push(tile);
 });
 
-// ─── Foco visual ──────────────────────────────────────────────────────────────
-const setFocus = (index) => {
-  tiles.forEach((t) => t.classList.remove("is-focused"));
-  focusedIndex = ((index % tiles.length) + tiles.length) % tiles.length;
-  tiles[focusedIndex].classList.add("is-focused");
-};
-
-// Inicializa sem foco visível (aparece só quando o usuário interage)
-let navActive = false;
-
-const activateNav = () => {
-  if (!navActive) {
-    navActive = true;
-    setFocus(0);
-  }
-};
-
-// ─── Expansão de coluna (OK / Enter) ─────────────────────────────────────────
-const expandTile = (index) => {
-  if (isExpanded) return;
-  isExpanded = true;
-  tiles[index].classList.add("is-fullscreen");
-  tiles[index].classList.remove("is-focused");
-};
-
-const collapseTile = () => {
-  if (!isExpanded) return;
-  isExpanded = false;
-  tiles.forEach((t) => t.classList.remove("is-fullscreen"));
-  setFocus(focusedIndex);
-};
-
-// ─── Controle por teclado / controle remoto ───────────────────────────────────
-// Teclas do controle remoto de TV mapeiam para teclas padrão:
-// Seta Esquerda  → ArrowLeft
-// Seta Direita   → ArrowRight
-// OK / Select    → Enter
-// Voltar / ESC   → Escape
-document.addEventListener("keydown", (e) => {
-  // Nunca intercepta combos com Ctrl/Alt/Meta
-  if (e.ctrlKey || e.altKey || e.metaKey) return;
-
-  switch (e.key) {
-    case "ArrowLeft":
-      e.preventDefault();
-      activateNav();
-      if (!isExpanded) setFocus(focusedIndex - 1);
-      break;
-
-    case "ArrowRight":
-      e.preventDefault();
-      activateNav();
-      if (!isExpanded) setFocus(focusedIndex + 1);
-      break;
-
-    case "Enter":
-      e.preventDefault();
-      activateNav();
-      if (isExpanded) {
-        collapseTile();
-      } else {
-        expandTile(focusedIndex);
-      }
-      break;
-
-    case "Escape":
-      e.preventDefault();
-      collapseTile();
-      break;
-
-    default:
-      break;
-  }
+// ─── Pontinhos indicadores ────────────────────────────────────────────────────
+const dots = systems.map((_, i) => {
+  const dot = document.createElement("div");
+  dot.className = "tv-dot";
+  dotsEl.appendChild(dot);
+  return dot;
 });
+
+// ─── Estado ───────────────────────────────────────────────────────────────────
+let current = 0;
+let slideshowTimer = null;
+let inactivityTimer = null;
+let progressStart = null;
+let progressAnimFrame = null;
+let isPaused = false;
+
+// ─── Mostrar slide ────────────────────────────────────────────────────────────
+const showSlide = (index) => {
+  current = ((index % tiles.length) + tiles.length) % tiles.length;
+
+  tiles.forEach((t, i) => t.classList.toggle("is-active", i === current));
+  dots.forEach((d, i) => d.classList.toggle("is-active", i === current));
+};
+
+// ─── Barra de progresso ───────────────────────────────────────────────────────
+const startProgress = () => {
+  cancelAnimationFrame(progressAnimFrame);
+  progressStart = performance.now();
+
+  const tick = (now) => {
+    const elapsed = now - progressStart;
+    const pct = Math.min((elapsed / SLIDE_DURATION) * 100, 100);
+    progressEl.style.width = pct + "%";
+    // Transition desativada para atualização frame-a-frame fluida
+    progressEl.style.transition = "none";
+    if (pct < 100) {
+      progressAnimFrame = requestAnimationFrame(tick);
+    }
+  };
+
+  progressAnimFrame = requestAnimationFrame(tick);
+};
+
+const resetProgress = () => {
+  cancelAnimationFrame(progressAnimFrame);
+  progressEl.style.width = "0%";
+};
+
+// ─── Slideshow automático ─────────────────────────────────────────────────────
+const startSlideshow = () => {
+  isPaused = false;
+  clearInterval(slideshowTimer);
+  showSlide(current);
+  startProgress();
+
+  slideshowTimer = setInterval(() => {
+    current = (current + 1) % tiles.length;
+    showSlide(current);
+    startProgress();
+  }, SLIDE_DURATION);
+};
+
+const pauseSlideshow = () => {
+  if (isPaused) return;
+  isPaused = true;
+  clearInterval(slideshowTimer);
+  resetProgress();
+};
+
+// ─── Timer de inatividade ─────────────────────────────────────────────────────
+const resetInactivity = () => {
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    // 30s sem interação → retoma slideshow do slide atual
+    startSlideshow();
+  }, INACTIVITY_TIMEOUT);
+};
+
+// ─── Interação do usuário ─────────────────────────────────────────────────────
+const onUserInteraction = () => {
+  pauseSlideshow();
+  resetInactivity();
+};
+
+document.addEventListener("pointerdown", onUserInteraction, { passive: true });
+document.addEventListener("keydown", onUserInteraction);
 
 // ─── Tela cheia automática ────────────────────────────────────────────────────
 const requestFs = () => {
@@ -151,10 +157,12 @@ const requestFs = () => {
 
 if (!document.fullscreenElement) {
   requestFs();
-
   const once = () => {
     requestFs();
     document.removeEventListener("pointerdown", once);
   };
   document.addEventListener("pointerdown", once, { passive: true });
 }
+
+// ─── Inicializar ──────────────────────────────────────────────────────────────
+startSlideshow();
