@@ -141,18 +141,23 @@ const onUserInteraction = () => {
   resetInactivity();
 };
 
-// Cliques fora dos iframes (bordas, barras, etc.)
+// Cliques fora dos iframes
 document.addEventListener("pointerdown", onUserInteraction, { passive: true });
+document.addEventListener("mousemove", onUserInteraction, { passive: true });
 document.addEventListener("keydown", onUserInteraction);
 
-// Cliques DENTRO dos iframes: quando o foco entra no iframe a janela perde o foco
-window.addEventListener("blur", () => {
-  setTimeout(() => {
-    if (!document.hasFocus()) {
-      onUserInteraction();
-    }
-  }, 80);
-});
+// Cliques DENTRO dos iframes (polling):
+// Verifica a cada 500ms se o foco saiu da página (entrou no iframe).
+// Funciona em qualquer browser, sem depender de eventos específicos.
+let hadFocus = true;
+setInterval(() => {
+  const hasFocusNow = document.hasFocus();
+  if (hadFocus && !hasFocusNow) {
+    // Foco acabou de sair da página → usuário clicou dentro do iframe
+    onUserInteraction();
+  }
+  hadFocus = hasFocusNow;
+}, 500);
 
 
 // ─── Tela cheia automática ────────────────────────────────────────────────────
