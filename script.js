@@ -1,4 +1,4 @@
-const systems = [
+﻿const systems = [
   {
     id: "c2",
     name: "C2",
@@ -22,6 +22,8 @@ const systems = [
   },
 ];
 
+const appShell = document.querySelector(".app-shell");
+const switcherPanel = document.querySelector(".switcher-panel");
 const systemsGrid = document.querySelector("#systemsGrid");
 const viewerTitle = document.querySelector("#viewerTitle");
 const framesContainer = document.querySelector("#framesContainer");
@@ -29,13 +31,9 @@ const openExternalLink = document.querySelector("#openExternalLink");
 const fullscreenToggle = document.querySelector("#fullscreenToggle");
 const viewModeSingle = document.querySelector("#viewModeSingle");
 const viewModeMulti = document.querySelector("#viewModeMulti");
-const layoutToggle = document.querySelector("#layoutToggle");
-const layoutRow = document.querySelector("#layoutRow");
-const layoutCol = document.querySelector("#layoutCol");
 
 let activeSystemId = systems[0]?.id ?? "";
-let isMultiView = false;
-let multiLayout = "row";
+let isMultiView = true;
 
 const isValidUrl = (value) => /^https?:\/\/.+/i.test(value.trim());
 
@@ -55,39 +53,6 @@ const createFrame = (url, title, id = "") => {
   iframe.loading = "lazy";
   iframe.src = url;
   return iframe;
-};
-
-const updateLayoutButtons = () => {
-  if (layoutRow) {
-    layoutRow.classList.toggle("is-active", multiLayout === "row");
-  }
-  if (layoutCol) {
-    layoutCol.classList.toggle("is-active", multiLayout === "col");
-  }
-
-  if (framesContainer.classList.contains("multi-frame-grid")) {
-    framesContainer.classList.toggle("layout-row", multiLayout === "row");
-    framesContainer.classList.toggle("layout-col", multiLayout === "col");
-  }
-};
-
-const updateButtons = () => {
-  const cards = systemsGrid.querySelectorAll(".system-card");
-  cards.forEach((card) => {
-    const selected = !isMultiView && card.dataset.system === activeSystemId;
-    card.classList.toggle("is-active", selected);
-    card.setAttribute("aria-pressed", String(selected));
-  });
-
-  if (viewModeSingle) {
-    viewModeSingle.classList.toggle("is-active", !isMultiView);
-  }
-  if (viewModeMulti) {
-    viewModeMulti.classList.toggle("is-active", isMultiView);
-  }
-  if (layoutToggle) {
-    layoutToggle.style.display = isMultiView ? "inline-flex" : "none";
-  }
 };
 
 const setOpenLink = (url) => {
@@ -110,11 +75,24 @@ const setOpenLink = (url) => {
   openExternalLink.setAttribute("aria-disabled", "true");
 };
 
+const updateUiState = () => {
+  const cards = systemsGrid.querySelectorAll(".system-card");
+  cards.forEach((card) => {
+    const selected = !isMultiView && card.dataset.system === activeSystemId;
+    card.classList.toggle("is-active", selected);
+    card.setAttribute("aria-pressed", String(selected));
+  });
+
+  viewModeSingle.classList.toggle("is-active", !isMultiView);
+  viewModeMulti.classList.toggle("is-active", isMultiView);
+  switcherPanel.classList.toggle("is-hidden", isMultiView);
+};
+
 const renderSystem = (systemId) => {
-  isMultiView = false;
   const system = systemById(systemId);
   if (!system) return;
 
+  isMultiView = false;
   activeSystemId = system.id;
   viewerTitle.textContent = system.name;
 
@@ -125,34 +103,44 @@ const renderSystem = (systemId) => {
   const iframe = createFrame(url, `Visualizacao do sistema ${system.name}`, "systemFrame");
   framesContainer.appendChild(iframe);
 
-  updateButtons();
+  updateUiState();
   setOpenLink(system.url);
+};
+
+const createMultiTile = (system) => {
+  const tile = document.createElement("section");
+  tile.className = "multi-tile";
+
+  const head = document.createElement("div");
+  head.className = "multi-tile-head";
+  head.textContent = system.name;
+  tile.appendChild(head);
+
+  if (isValidUrl(system.url)) {
+    const iframe = createFrame(system.url, `Visualizacao do sistema ${system.name}`);
+    tile.appendChild(iframe);
+  } else {
+    const placeholder = document.createElement("div");
+    placeholder.className = "multi-placeholder";
+    placeholder.textContent = "Link ainda nao configurado";
+    tile.appendChild(placeholder);
+  }
+
+  return tile;
 };
 
 const renderMultiView = () => {
   isMultiView = true;
-  viewerTitle.textContent = "Vis\u00E3o Simult\u00E2nea";
+  viewerTitle.textContent = "3 sistemas simultaneos";
 
-  framesContainer.className = `frame-shell multi-frame-grid layout-${multiLayout}`;
+  framesContainer.className = "frame-shell multi-frame-grid";
   framesContainer.innerHTML = "";
 
-  const readySystems = systems.filter((system) => isValidUrl(system.url));
-  if (readySystems.length === 0) {
-    const message = document.createElement("p");
-    message.style.padding = "2rem";
-    message.style.textAlign = "center";
-    message.style.color = "var(--muted)";
-    message.textContent = "Nenhum sistema configurado para exibi\u00E7\u00E3o simult\u00E2nea.";
-    framesContainer.appendChild(message);
-  } else {
-    readySystems.forEach((system) => {
-      const iframe = createFrame(system.url, `Visualizacao do sistema ${system.name}`);
-      framesContainer.appendChild(iframe);
-    });
-  }
+  systems.forEach((system) => {
+    framesContainer.appendChild(createMultiTile(system));
+  });
 
-  updateButtons();
-  updateLayoutButtons();
+  updateUiState();
   setOpenLink("");
 };
 
@@ -186,37 +174,20 @@ const renderCards = () => {
 };
 
 const setupViewToggle = () => {
-  if (viewModeSingle) {
-    viewModeSingle.addEventListener("click", () => {
-      if (!isMultiView) return;
-      renderSystem(activeSystemId);
-    });
-  }
+  viewModeSingle.addEventListener("click", () => {
+    if (!isMultiView) return;
+    renderSystem(activeSystemId);
+  });
 
-  if (viewModeMulti) {
-    viewModeMulti.addEventListener("click", () => {
-      if (isMultiView) return;
-      renderMultiView();
-    });
-  }
-
-  if (layoutRow) {
-    layoutRow.addEventListener("click", () => {
-      multiLayout = "row";
-      updateLayoutButtons();
-    });
-  }
-
-  if (layoutCol) {
-    layoutCol.addEventListener("click", () => {
-      multiLayout = "col";
-      updateLayoutButtons();
-    });
-  }
+  viewModeMulti.addEventListener("click", () => {
+    if (isMultiView) return;
+    renderMultiView();
+  });
 };
 
 const setupKeyboardShortcuts = () => {
   document.addEventListener("keydown", (event) => {
+    if (isMultiView) return;
     if (event.ctrlKey || event.altKey || event.metaKey) return;
 
     const targetTag = document.activeElement?.tagName;
@@ -236,18 +207,42 @@ const setupKeyboardShortcuts = () => {
   });
 };
 
+const requestFullscreenOnShell = async () => {
+  if (document.fullscreenElement === appShell) return true;
+
+  try {
+    await appShell.requestFullscreen();
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+const setupInitialFullscreen = () => {
+  const onInteraction = async () => {
+    await requestFullscreenOnShell();
+  };
+
+  requestFullscreenOnShell().then((ok) => {
+    if (ok) return;
+
+    document.addEventListener("pointerdown", onInteraction, { once: true });
+    document.addEventListener("keydown", onInteraction, { once: true });
+  });
+};
+
 const setupFullscreen = () => {
   const updateFullscreenLabel = () => {
-    const isFullscreen = document.fullscreenElement === framesContainer;
+    const isFullscreen = document.fullscreenElement === appShell;
     fullscreenToggle.textContent = isFullscreen ? "Sair da tela cheia" : "Tela cheia";
   };
 
   fullscreenToggle.addEventListener("click", async () => {
     try {
-      if (document.fullscreenElement === framesContainer) {
+      if (document.fullscreenElement === appShell) {
         await document.exitFullscreen();
       } else {
-        await framesContainer.requestFullscreen();
+        await appShell.requestFullscreen();
       }
     } catch (error) {
       console.warn("Tela cheia nao disponivel neste navegador.", error);
@@ -263,4 +258,5 @@ renderCards();
 setupKeyboardShortcuts();
 setupViewToggle();
 setupFullscreen();
-renderSystem(activeSystemId);
+renderMultiView();
+setupInitialFullscreen();
