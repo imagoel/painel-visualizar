@@ -141,8 +141,19 @@ const onUserInteraction = () => {
   resetInactivity();
 };
 
+// Cliques fora dos iframes (bordas, barras, etc.)
 document.addEventListener("pointerdown", onUserInteraction, { passive: true });
 document.addEventListener("keydown", onUserInteraction);
+
+// Cliques DENTRO dos iframes: quando o foco entra no iframe a janela perde o foco
+window.addEventListener("blur", () => {
+  setTimeout(() => {
+    if (!document.hasFocus()) {
+      onUserInteraction();
+    }
+  }, 80);
+});
+
 
 // ─── Tela cheia automática ────────────────────────────────────────────────────
 const requestFs = () => {
