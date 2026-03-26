@@ -8,5 +8,5 @@ services:
       dockerfile: Dockerfile
     container_name: visualizador-sistemas
     ports:
-      - "8080:80"
+      - "38520:80"
     restart: unless-stopped
