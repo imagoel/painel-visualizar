@@ -1,12 +1,12 @@
-FROM nginx:alpine
+﻿FROM nginx:alpine
 
-# Remove a configuração padrão do nginx
+# Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copia o arquivo de configuração customizado
+# Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copia todos os arquivos do projeto para o diretório de serviço do nginx
+# Copy project files
 COPY . /usr/share/nginx/html
 
 EXPOSE 80

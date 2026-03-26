@@ -1,6 +1,6 @@
-.dockerignore
-Dockerfile
-docker-compose.yml
-nginx.conf
-README.md
-*.md
+.git
+.gitignore
+.github
+*.log
+Thumbs.db
+.DS_Store
