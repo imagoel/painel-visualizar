@@ -106,3 +106,26 @@ body {
 .tv-placeholder svg {
   opacity: 0.3;
 }
+
+/* ── Marca d'água (watermark) ───────────────────────────────────────────── */
+.watermark {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.18;
+  transition: opacity 400ms ease;
+  mix-blend-mode: screen;
+}
+
+.watermark:hover {
+  opacity: 0.55;
+}
+
+.watermark img {
+  width: 120px;
+  height: auto;
+  filter: brightness(0) invert(1);
+  display: block;
+}
