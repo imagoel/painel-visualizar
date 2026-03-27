@@ -61,6 +61,13 @@ const tiles = systems.map((sys) => {
 const dots = systems.map((_, i) => {
   const dot = document.createElement("div");
   dot.className = "tv-dot";
+  dot.title = systems[i].name;
+  dot.addEventListener("pointerdown", (e) => {
+    e.stopPropagation(); // evita disparar o onUserInteraction genérico duas vezes
+    pauseSlideshow();
+    showSlide(i);
+    resetInactivity();
+  });
   dotsEl.appendChild(dot);
   return dot;
 });
