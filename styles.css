@@ -118,7 +118,7 @@ body {
   pointer-events: none;
   opacity: 0.55;
   transition: opacity 400ms ease;
-  mix-blend-mode: screen;
+  mix-blend-mode: multiply;
 }
 
 .watermark:hover {
@@ -128,6 +128,5 @@ body {
 .watermark img {
   width: 150px;
   height: auto;
-  filter: brightness(0) invert(1);
   display: block;
 }
