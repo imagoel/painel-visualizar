@@ -16,7 +16,7 @@ const systems = [
   {
     id: "sistema-3",
     name: "Sistema 3",
-    url: "https://prodeboffice365-my.sharepoint.com/:x:/g/personal/seafi_suplan_amargosa_ba_gov_br/IQAVy0LK8BwyTLWMXZ94jCJpAcqpyafP5tk4cFBk5JMPNX8?rtime=XJA_YSmP3kg",
+    url: "https://prodeboffice365-my.sharepoint.com/personal/seafi_suplan_amargosa_ba_gov_br/_layouts/15/doc2.aspx?sourcedoc=%7Bca42cb15-1cf0-4c32-b58c-5d9f788c2269%7D&action=embedview&ClientRender=1",
   },
 ];
 
