@@ -18,6 +18,11 @@ const systems = [
     name: "Sistema 3",
     url: "",
   },
+  {
+    id: "sistema-4",
+    name: "Sistema 4",
+    url: "https://prodeboffice365-my.sharepoint.com/:x:/g/personal/seafi_suplan_amargosa_ba_gov_br/IQAVy0LK8BwyTLWMXZ94jCJpAcqpyafP5tk4cFBk5JMPNX8?e=e8yG8i",
+  },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
