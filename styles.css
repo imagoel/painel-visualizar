@@ -119,6 +119,8 @@ body {
   opacity: 0.55;
   transition: opacity 400ms ease;
   mix-blend-mode: multiply;
+  display: flex;
+  align-items: flex-end;
 }
 
 .watermark:hover {
@@ -129,4 +131,30 @@ body {
   width: 150px;
   height: auto;
   display: block;
+  transform: translateY(30px);
+}
+
+/* ── Logo da Prefeitura (esquerda) ─────────────────────────────────────── */
+.watermark-prefeitura {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 400ms ease;
+  mix-blend-mode: multiply;
+  display: flex;
+  align-items: flex-end;
+}
+
+.watermark-prefeitura:hover {
+  opacity: 0.92;
+}
+
+.watermark-prefeitura img {
+  width: 150px;
+  height: auto;
+  display: block;
+  transform: translateY(-35px);
 }
