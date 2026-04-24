@@ -1,26 +1,53 @@
-# Painel de 3 Sistemas
+# Painel de Sistemas com Login
 
-Projeto simples para alternar entre 3 sistemas em uma unica tela.
+Aplicacao web com login institucional, painel protegido por usuario, permissoes por secretaria e administracao centralizada de acessos.
 
-## Como usar
+## Tecnologias
 
-1. Abra `script.js`.
-2. No bloco `const systems = [...]`, preencha `url` de cada sistema.
-3. Se tiver logo dos outros sistemas, preencha `logo` com o caminho da imagem.
-4. Abra `index.html` no navegador.
+- Node.js
+- Express
+- SQLite
+- Sessao por cookie `httpOnly`
 
-## Exemplo de configuracao
+## Como rodar localmente
 
-```js
-{
-  id: "c2",
-  name: "C2",
-  subtitle: "Sistema principal",
-  url: "https://seu-link-aqui",
-  logo: "assets/c2-logo.svg",
-}
+1. Instale as dependencias:
+
+```bash
+npm install
 ```
 
-## Observacao importante
+2. Inicie a aplicacao:
 
-Alguns sistemas podem bloquear exibicao em `iframe`. Quando isso acontecer, use o botao **Abrir em nova aba**.
+```bash
+npm start
+```
+
+3. Acesse:
+
+```text
+http://localhost:3000
+```
+
+## Credenciais iniciais
+
+- Admin
+  - E-mail: `admin@amargosa.ba.gov.br`
+  - Senha: `admin123`
+- Secretaria SEAFI
+  - E-mail: `seafi@amargosa.ba.gov.br`
+  - Senha: `seafi123`
+
+Recomendacao: altere as senhas iniciais apos subir o sistema em producao.
+
+## Rotas principais
+
+- `/login`: tela de autenticacao
+- `/painel`: visualizacao dos sistemas liberados para o usuario
+- `/admin`: area administrativa
+
+## Persistencia
+
+O banco SQLite fica em `data/painel.db`.
+
+No `docker-compose.yml`, o volume `painel_data` garante persistencia de usuarios, secretarias e sistemas mesmo apos redeploy.

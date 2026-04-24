@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel de Sistemas</title>
+    <link rel="stylesheet" href="/static/panel.css" />
+  </head>
+  <body>
+    <header class="panel-topbar">
+      <div class="panel-identity">
+        <img src="/assets/logo-prefeitura-horizontal-login.png" alt="Prefeitura de Amargosa" />
+        <div>
+          <p class="panel-kicker">Painel institucional</p>
+          <h1 id="panelTitle">Carregando...</h1>
+        </div>
+      </div>
+
+      <div class="panel-actions">
+        <button id="adminButton" class="ghost-button is-hidden" type="button">Administracao</button>
+        <button id="logoutButton" class="ghost-button" type="button">Sair</button>
+      </div>
+    </header>
+
+    <main class="panel-shell">
+      <div id="stage" class="tv-stage"></div>
+      <div id="dots" class="tv-dots"></div>
+      <div id="progress" class="tv-progress"></div>
+
+      <div class="panel-watermark left">
+        <img src="/assets/logo-prefeitura.png" alt="Prefeitura de Amargosa" />
+      </div>
+      <div class="panel-watermark right">
+        <img src="/assets/logo.png" alt="Immanuel Vicente" />
+      </div>
+    </main>
+
+    <script src="/static/panel.js"></script>
+  </body>
+</html>

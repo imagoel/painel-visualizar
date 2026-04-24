@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Administracao | Painel de Sistemas</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+  </head>
+  <body>
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <img src="/assets/logo-prefeitura-horizontal-login.png" alt="Prefeitura de Amargosa" class="admin-brand" />
+        <div class="admin-sidebar-copy">
+          <p class="eyebrow">Controle central</p>
+          <h1>Painel de acessos</h1>
+          <p>Cadastre usuarios, secretarias, sistemas e defina quem pode visualizar cada painel.</p>
+        </div>
+
+        <div class="admin-sidebar-actions">
+          <button id="backToPanel" class="ghost-button" type="button">Voltar ao painel</button>
+          <button id="logoutButton" class="ghost-button" type="button">Sair</button>
+        </div>
+      </aside>
+
+      <main class="admin-content">
+        <header class="admin-header">
+          <div>
+            <p class="eyebrow">Administracao</p>
+            <h2>Gestao de usuarios e permissos</h2>
+          </div>
+          <p id="adminWelcome" class="admin-welcome"></p>
+        </header>
+
+        <section class="stats-grid">
+          <article class="stat-card">
+            <span>Secretarias</span>
+            <strong id="secretariaCount">0</strong>
+          </article>
+          <article class="stat-card">
+            <span>Sistemas</span>
+            <strong id="systemCount">0</strong>
+          </article>
+          <article class="stat-card">
+            <span>Usuarios</span>
+            <strong id="userCount">0</strong>
+          </article>
+        </section>
+
+        <section class="admin-grid">
+          <article class="admin-card">
+            <div class="card-header">
+              <div>
+                <p class="eyebrow">Cadastro</p>
+                <h3>Nova secretaria</h3>
+              </div>
+            </div>
+
+            <form id="createSecretariaForm" class="stack-form">
+              <input name="name" type="text" placeholder="Nome da secretaria" required />
+              <input name="slug" type="text" placeholder="Slug opcional" />
+              <button type="submit" class="primary-button">Criar secretaria</button>
+            </form>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Slug</th>
+                    <th>Ativa</th>
+                    <th>Salvar</th>
+                  </tr>
+                </thead>
+                <tbody id="secretariasTable"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="admin-card">
+            <div class="card-header">
+              <div>
+                <p class="eyebrow">Cadastro</p>
+                <h3>Novo sistema</h3>
+              </div>
+            </div>
+
+            <form id="createSystemForm" class="stack-form">
+              <input name="name" type="text" placeholder="Nome do sistema" required />
+              <input name="slug" type="text" placeholder="Slug opcional" />
+              <input name="url" type="url" placeholder="https://link-do-sistema" />
+              <input name="description" type="text" placeholder="Descricao curta" />
+              <input name="position" type="number" min="1" value="1" placeholder="Posicao" />
+              <button type="submit" class="primary-button">Criar sistema</button>
+            </form>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>URL</th>
+                    <th>Ordem</th>
+                    <th>Ativo</th>
+                    <th>Salvar</th>
+                  </tr>
+                </thead>
+                <tbody id="systemsTable"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="admin-grid">
+          <article class="admin-card wide">
+            <div class="card-header">
+              <div>
+                <p class="eyebrow">Cadastro</p>
+                <h3>Novo usuario</h3>
+              </div>
+            </div>
+
+            <form id="createUserForm" class="stack-form users-form">
+              <input name="name" type="text" placeholder="Nome do usuario" required />
+              <input name="email" type="email" placeholder="email@amargosa.ba.gov.br" required />
+              <input name="password" type="password" placeholder="Senha inicial" required />
+              <select name="role" required>
+                <option value="secretaria">Usuario de secretaria</option>
+                <option value="admin">Administrador</option>
+              </select>
+              <select name="secretariaId" id="newUserSecretaria"></select>
+              <button type="submit" class="primary-button">Criar usuario</button>
+            </form>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Perfil</th>
+                    <th>Secretaria</th>
+                    <th>Nova senha</th>
+                    <th>Ativo</th>
+                    <th>Salvar</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTable"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="admin-card wide">
+          <div class="card-header split">
+            <div>
+              <p class="eyebrow">Permissoes</p>
+              <h3>Sistemas por secretaria</h3>
+            </div>
+
+            <select id="permissionSecretariaSelect"></select>
+          </div>
+
+          <div id="permissionsGrid" class="permissions-grid"></div>
+          <div class="save-row">
+            <button id="savePermissionsButton" class="primary-button" type="button">Salvar acessos</button>
+            <p id="adminMessage" class="admin-message"></p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/admin.js"></script>
+  </body>
+</html>

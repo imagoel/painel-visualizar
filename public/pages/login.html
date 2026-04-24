@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | Gestao de Projetos</title>
+    <link rel="stylesheet" href="/static/login.css" />
+  </head>
+  <body>
+    <main class="login-shell">
+      <section class="login-card">
+        <img
+          class="brand-main"
+          src="/assets/logo-prefeitura-horizontal-login.png"
+          alt="Prefeitura de Amargosa"
+        />
+
+        <div class="login-copy">
+          <p class="eyebrow">Acesso institucional</p>
+          <h1>Gestao de projetos</h1>
+          <p class="subtitle">Entre com seu usuario para visualizar apenas os sistemas liberados para sua secretaria.</p>
+        </div>
+
+        <form id="loginForm" class="login-form">
+          <label class="field">
+            <span>E-mail</span>
+            <input id="email" name="email" type="email" autocomplete="username" placeholder="seu@empresa.com" required />
+          </label>
+
+          <label class="field">
+            <span>Senha</span>
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="********" required />
+          </label>
+
+          <p id="loginMessage" class="login-message" role="alert"></p>
+
+          <button id="submitButton" class="login-button" type="submit">Entrar</button>
+        </form>
+
+        <div class="login-footer">
+          <img class="brand-secondary gti" src="/assets/logo-gti-login.png" alt="GTI" />
+          <span class="footer-divider" aria-hidden="true"></span>
+          <img class="brand-secondary signature" src="/assets/logo-immanuel-login.png" alt="Immanuel Vicente" />
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/login.js"></script>
+  </body>
+</html>

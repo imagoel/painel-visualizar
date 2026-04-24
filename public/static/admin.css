@@ -1,0 +1,315 @@
+:root {
+  --bg-a: #edf4f5;
+  --bg-b: #f7f1ec;
+  --card: rgba(255, 255, 255, 0.82);
+  --text: #20283a;
+  --muted: #667085;
+  --line: rgba(73, 98, 130, 0.12);
+  --accent: #a5264c;
+  --accent-2: #0f5d8f;
+  --shadow: 0 24px 55px rgba(36, 48, 69, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(88, 164, 162, 0.14), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(165, 38, 76, 0.08), transparent 22%),
+    linear-gradient(140deg, var(--bg-a), var(--bg-b));
+}
+
+.admin-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+}
+
+.admin-sidebar {
+  padding: 1.8rem;
+  background: linear-gradient(180deg, #0b3150, #08263d);
+  color: #eff7ff;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+.admin-brand {
+  width: 100%;
+  max-width: 240px;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 22px;
+  padding: 0.75rem 0.95rem;
+}
+
+.admin-sidebar-copy h1 {
+  margin: 0.25rem 0 0.85rem;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.admin-sidebar-copy p:last-child {
+  margin: 0;
+  color: rgba(225, 238, 251, 0.72);
+  line-height: 1.6;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  color: rgba(140, 171, 203, 0.86);
+}
+
+.admin-sidebar-actions {
+  margin-top: auto;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ghost-button,
+.primary-button {
+  border-radius: 16px;
+  padding: 0.9rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ghost-button {
+  border: 1px solid rgba(184, 216, 246, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #eef7ff;
+}
+
+.primary-button {
+  border: 0;
+  background: linear-gradient(180deg, #bf335b, var(--accent));
+  color: #fff;
+  box-shadow: 0 18px 24px rgba(165, 38, 76, 0.16);
+}
+
+.admin-content {
+  padding: 1.5rem;
+  display: grid;
+  gap: 1.3rem;
+}
+
+.admin-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-header h2 {
+  margin: 0.25rem 0 0;
+  font-size: 2rem;
+}
+
+.admin-welcome {
+  margin: 0;
+  color: var(--muted);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.stat-card,
+.admin-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.stat-card {
+  padding: 1.25rem 1.35rem;
+}
+
+.stat-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 2rem;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-card {
+  padding: 1.2rem;
+}
+
+.admin-card.wide {
+  grid-column: 1 / -1;
+}
+
+.card-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card-header h3 {
+  margin: 0.25rem 0 0;
+  font-size: 1.35rem;
+}
+
+.card-header.split {
+  align-items: center;
+}
+
+.card-header select {
+  min-width: 220px;
+}
+
+.stack-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.users-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid rgba(73, 98, 130, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.84rem 0.92rem;
+  font-size: 0.94rem;
+  color: var(--text);
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.8rem 0.5rem;
+  text-align: left;
+  border-top: 1px solid rgba(73, 98, 130, 0.1);
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+td input,
+td select {
+  min-width: 100px;
+}
+
+.row-save {
+  white-space: nowrap;
+}
+
+.row-save button {
+  border: 0;
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  font-weight: 700;
+  background: rgba(15, 93, 143, 0.1);
+  color: var(--accent-2);
+  cursor: pointer;
+}
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.permission-item {
+  display: grid;
+  grid-template-columns: auto 1fr 110px;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid rgba(73, 98, 130, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.permission-copy h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.permission-copy p {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.save-row {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-message {
+  margin: 0;
+  color: var(--accent);
+  min-height: 1.1rem;
+}
+
+@media (max-width: 1180px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    gap: 1rem;
+  }
+
+  .admin-sidebar-actions {
+    margin-top: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .users-form,
+  .admin-grid,
+  .permissions-grid,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
