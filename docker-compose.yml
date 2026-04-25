@@ -8,7 +8,7 @@ services:
     container_name: visualizador-sistemas
     environment:
       PORT: 3000
-      SESSION_SECRET: troque-essa-chave-no-portainer
+      SESSION_SECRET: HLZkoIIKEa8YuJR8nRmz7FP4ycz8/41K2aWXjD3PEuHhfZUCwLCkNYNwmIm1eIPCW3XFHP7QXKrWJy4dxbJhkg==
     ports:
       - "38520:3000"
     volumes:
