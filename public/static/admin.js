@@ -97,7 +97,14 @@ function renderSecretariasTable() {
       (secretaria) => `
         <tr data-id="${secretaria.id}">
           <td><input data-field="name" type="text" value="${escapeHtml(secretaria.name)}" /></td>
-          <td><input data-field="slug" type="text" value="${escapeHtml(secretaria.slug)}" /></td>
+          <td>
+            <input
+              data-field="slug"
+              type="text"
+              placeholder="Identificador"
+              value="${escapeHtml(secretaria.slug)}"
+            />
+          </td>
           <td><input data-field="isActive" type="checkbox" ${secretaria.isActive ? "checked" : ""} /></td>
           <td class="row-save"><button type="button" data-action="save-secretaria">Salvar</button></td>
         </tr>
@@ -113,7 +120,12 @@ function renderSystemsTable() {
         <tr data-id="${system.id}">
           <td>
             <input data-field="name" type="text" value="${escapeHtml(system.name)}" />
-            <input data-field="slug" type="text" value="${escapeHtml(system.slug)}" />
+            <input
+              data-field="slug"
+              type="text"
+              placeholder="Identificador"
+              value="${escapeHtml(system.slug)}"
+            />
           </td>
           <td>
             <input data-field="url" type="url" value="${escapeHtml(system.url)}" />

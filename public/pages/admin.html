@@ -9,7 +9,15 @@
   <body>
     <div class="admin-shell">
       <aside class="admin-sidebar">
-        <img src="/assets/logo-prefeitura-horizontal-login.png" alt="Prefeitura de Amargosa" class="admin-brand" />
+        <div class="admin-brand-strip" aria-label="Marcas do painel">
+          <img src="/assets/logo-gti-login.png" alt="GTI" class="admin-brand-logo admin-brand-gti" />
+          <span class="admin-brand-divider" aria-hidden="true"></span>
+          <img
+            src="/assets/logo-immanuel-login.png"
+            alt="Immanuel Vicente"
+            class="admin-brand-logo admin-brand-immanuel"
+          />
+        </div>
         <div class="admin-sidebar-copy">
           <p class="eyebrow">Controle central</p>
           <h1>Painel de acessos</h1>
@@ -57,7 +65,7 @@
 
             <form id="createSecretariaForm" class="stack-form">
               <input name="name" type="text" placeholder="Nome da secretaria" required />
-              <input name="slug" type="text" placeholder="Slug opcional" />
+              <input name="slug" type="text" placeholder="Identificador interno opcional" />
               <button type="submit" class="primary-button">Criar secretaria</button>
             </form>
 
@@ -66,7 +74,7 @@
                 <thead>
                   <tr>
                     <th>Nome</th>
-                    <th>Slug</th>
+                    <th>Identificador</th>
                     <th>Ativa</th>
                     <th>Salvar</th>
                   </tr>
@@ -86,7 +94,7 @@
 
             <form id="createSystemForm" class="stack-form">
               <input name="name" type="text" placeholder="Nome do sistema" required />
-              <input name="slug" type="text" placeholder="Slug opcional" />
+              <input name="slug" type="text" placeholder="Identificador interno opcional" />
               <input name="url" type="url" placeholder="https://link-do-sistema" />
               <input name="description" type="text" placeholder="Descricao curta" />
               <input name="position" type="number" min="1" value="1" placeholder="Posicao" />
