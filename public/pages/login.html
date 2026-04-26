@@ -3,46 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login | Gestao de Projetos</title>
+    <title>Login | Painel visualizar</title>
     <link rel="stylesheet" href="/static/login.css" />
   </head>
   <body>
-    <main class="login-shell">
-      <section class="login-card">
+    <main class="login-page">
+      <div class="login-stack">
         <img
-          class="brand-main"
-          src="/assets/logo-prefeitura-horizontal-login.png"
           alt="Prefeitura de Amargosa"
+          class="login-logo"
+          src="/assets/logo-prefeitura-horizontal-login.png"
         />
 
-        <div class="login-copy">
-          <p class="eyebrow">Acesso institucional</p>
-          <h1>Gestao de projetos</h1>
-          <p class="subtitle">Entre com seu usuario para visualizar apenas os sistemas liberados para sua secretaria.</p>
-        </div>
+        <section class="login-head">
+          <h1 class="login-title">Painel visualizar</h1>
+        </section>
 
-        <form id="loginForm" class="login-form">
+        <form id="loginForm" class="login-card">
           <label class="field">
             <span>E-mail</span>
-            <input id="email" name="email" type="email" autocomplete="username" placeholder="seu@empresa.com" required />
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              placeholder="seu@empresa.com"
+              required
+            />
           </label>
 
           <label class="field">
             <span>Senha</span>
-            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="********" required />
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="********"
+              required
+            />
           </label>
 
           <p id="loginMessage" class="login-message" role="alert"></p>
 
           <button id="submitButton" class="login-button" type="submit">Entrar</button>
         </form>
+      </div>
 
-        <div class="login-footer">
-          <img class="brand-secondary gti" src="/assets/logo-gti-login.png" alt="GTI" />
-          <span class="footer-divider" aria-hidden="true"></span>
-          <img class="brand-secondary signature" src="/assets/logo-immanuel-login.png" alt="Immanuel Vicente" />
+      <footer class="login-footer">
+        <div class="login-footer-logos">
+          <img
+            alt="GTI"
+            class="login-footer-logo login-footer-logo-gti"
+            src="/assets/logo-gti-login.png"
+          />
+          <span aria-hidden="true" class="login-footer-divider"></span>
+          <img
+            alt="Immanuel Vicente"
+            class="login-footer-logo login-footer-logo-immanuel"
+            src="/assets/logo-immanuel-login.png"
+          />
         </div>
-      </section>
+      </footer>
     </main>
 
     <script src="/static/login.js"></script>
