@@ -36,7 +36,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1rem;
   background: linear-gradient(180deg, rgba(3, 16, 29, 0.82), rgba(3, 16, 29, 0.22));
   backdrop-filter: blur(12px);
 }
@@ -44,12 +44,7 @@ body {
 .panel-identity {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.panel-identity img {
-  width: 180px;
-  height: auto;
+  gap: 0.75rem;
 }
 
 .panel-kicker {
@@ -62,7 +57,7 @@ body {
 
 .panel-identity h1 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .panel-actions {
@@ -221,11 +216,7 @@ body {
 
 @media (max-width: 900px) {
   .panel-topbar {
-    padding: 0.9rem;
-  }
-
-  .panel-identity img {
-    width: 132px;
+    padding: 0.7rem;
   }
 
   .panel-identity h1 {
