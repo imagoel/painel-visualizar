@@ -8,15 +8,8 @@
   </head>
   <body>
     <header class="panel-topbar">
-      <div class="panel-identity">
-        <div>
-          <p class="panel-kicker">Painel institucional</p>
-          <h1 id="panelTitle">Carregando...</h1>
-        </div>
-      </div>
-
       <div class="panel-actions">
-        <button id="adminButton" class="ghost-button is-hidden" type="button">Administracao</button>
+        <button id="editViewButton" class="ghost-button" type="button">Editar visualização</button>
         <button id="logoutButton" class="ghost-button" type="button">Sair</button>
       </div>
     </header>
@@ -26,6 +19,24 @@
       <div id="dots" class="tv-dots"></div>
       <div id="progress" class="tv-progress"></div>
     </main>
+
+    <div id="visualizationModal" class="visualization-modal is-hidden" role="dialog" aria-modal="true">
+      <section class="visualization-dialog">
+        <div class="visualization-header">
+          <h2>Editar visualização</h2>
+          <button id="closeVisualizationButton" class="icon-button" type="button" aria-label="Fechar">&times;</button>
+        </div>
+
+        <div id="visualizationOptions" class="visualization-options"></div>
+
+        <p id="visualizationMessage" class="visualization-message" role="alert"></p>
+
+        <div class="visualization-actions">
+          <button id="cancelVisualizationButton" class="secondary-button" type="button">Cancelar</button>
+          <button id="applyVisualizationButton" class="primary-button" type="button">Aplicar</button>
+        </div>
+      </section>
+    </div>
 
     <script src="/static/panel.js"></script>
   </body>

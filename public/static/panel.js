@@ -2,12 +2,19 @@ const stage = document.getElementById("stage");
 const dotsEl = document.getElementById("dots");
 const progressEl = document.getElementById("progress");
 const logoutButton = document.getElementById("logoutButton");
-const adminButton = document.getElementById("adminButton");
-const panelTitle = document.getElementById("panelTitle");
+const editViewButton = document.getElementById("editViewButton");
+const visualizationModal = document.getElementById("visualizationModal");
+const visualizationOptions = document.getElementById("visualizationOptions");
+const visualizationMessage = document.getElementById("visualizationMessage");
+const closeVisualizationButton = document.getElementById("closeVisualizationButton");
+const cancelVisualizationButton = document.getElementById("cancelVisualizationButton");
+const applyVisualizationButton = document.getElementById("applyVisualizationButton");
 
 const state = {
   user: null,
+  availableSystems: [],
   systems: [],
+  selectedSystemIds: [],
   slideDuration: 30000,
   inactivityTimeout: 30000,
   current: 0,
@@ -18,6 +25,7 @@ const state = {
   tiles: [],
   dots: [],
   isPaused: false,
+  isEditing: false,
 };
 
 function fetchJson(url, options = {}) {
@@ -90,6 +98,40 @@ function createPlaceholder(title, message) {
   return wrapper;
 }
 
+function getVisibleSystems() {
+  const selected = new Set(state.selectedSystemIds.map(String));
+  return state.availableSystems.filter((system) => selected.has(String(system.id)));
+}
+
+function renderVisualizationOptions() {
+  visualizationMessage.textContent = "";
+
+  if (!state.availableSystems.length) {
+    visualizationOptions.innerHTML = `
+      <div class="visualization-option">
+        <span></span>
+        <strong>Nenhum sistema liberado</strong>
+      </div>
+    `;
+    return;
+  }
+
+  const selected = new Set(state.selectedSystemIds.map(String));
+  visualizationOptions.innerHTML = state.availableSystems
+    .map(
+      (system) => `
+        <label class="visualization-option">
+          <input type="checkbox" value="${escapeHtml(system.id)}" ${selected.has(String(system.id)) ? "checked" : ""} />
+          <span>
+            <strong>${escapeHtml(system.name)}</strong>
+            <small>${escapeHtml(system.description || "Sistema disponivel")}</small>
+          </span>
+        </label>
+      `
+    )
+    .join("");
+}
+
 function renderSystems() {
   const systems = state.systems.length
     ? state.systems
@@ -138,6 +180,14 @@ function renderSystems() {
     dotsEl.appendChild(dot);
     state.dots.push(dot);
   });
+}
+
+function restartSlideshow() {
+  clearInterval(state.timer);
+  resetProgress();
+  renderSystems();
+  showSlide(0);
+  startSlideshow();
 }
 
 function showSlide(index) {
@@ -192,10 +242,48 @@ function pauseSlideshow() {
 }
 
 function resetInactivity() {
+  if (state.isEditing) return;
+
   clearTimeout(state.inactivityTimer);
   state.inactivityTimer = setTimeout(() => {
     startSlideshow();
   }, state.inactivityTimeout);
+}
+
+function openVisualizationModal() {
+  state.isEditing = true;
+  clearTimeout(state.inactivityTimer);
+  pauseSlideshow();
+  renderVisualizationOptions();
+  visualizationModal.classList.remove("is-hidden");
+  applyVisualizationButton.focus();
+}
+
+function closeVisualizationModal(shouldResume = true) {
+  state.isEditing = false;
+  visualizationModal.classList.add("is-hidden");
+  visualizationMessage.textContent = "";
+
+  if (shouldResume) {
+    startSlideshow();
+  }
+}
+
+function applyVisualization() {
+  const checkedIds = Array.from(visualizationOptions.querySelectorAll('input[type="checkbox"]:checked')).map(
+    (input) => input.value
+  );
+
+  if (!checkedIds.length && state.availableSystems.length) {
+    visualizationMessage.textContent = "Selecione pelo menos um sistema.";
+    return;
+  }
+
+  state.selectedSystemIds = checkedIds;
+  state.systems = getVisibleSystems();
+  state.current = 0;
+  closeVisualizationModal(false);
+  restartSlideshow();
 }
 
 function registerInteractions() {
@@ -218,6 +306,7 @@ function registerInteractions() {
   }, 500);
 
   document.addEventListener("keydown", (event) => {
+    if (state.isEditing) return;
     if (event.ctrlKey || event.altKey || event.metaKey) return;
 
     const shortcut = Number(event.key);
@@ -237,20 +326,11 @@ async function bootstrap() {
     const panelData = await fetchJson("/api/panel/config");
 
     state.user = sessionData.user;
-    state.systems = panelData.systems;
+    state.availableSystems = panelData.systems;
+    state.selectedSystemIds = state.availableSystems.map((system) => String(system.id));
+    state.systems = getVisibleSystems();
     state.slideDuration = panelData.settings.slideDuration;
     state.inactivityTimeout = panelData.settings.inactivityTimeout;
-
-    panelTitle.textContent = state.user.secretariaName
-      ? `${state.user.secretariaName} - ${state.systems.length} sistema(s)`
-      : "Painel institucional";
-
-    if (state.user.role === "admin") {
-      adminButton.classList.remove("is-hidden");
-      adminButton.addEventListener("click", () => {
-        window.location.href = "/admin";
-      });
-    }
 
     renderSystems();
     showSlide(0);
@@ -265,6 +345,34 @@ async function bootstrap() {
 logoutButton.addEventListener("click", async () => {
   await fetchJson("/api/auth/logout", { method: "POST" }).catch(() => null);
   window.location.href = "/login";
+});
+
+editViewButton.addEventListener("click", () => {
+  openVisualizationModal();
+});
+
+closeVisualizationButton.addEventListener("click", () => {
+  closeVisualizationModal();
+});
+
+cancelVisualizationButton.addEventListener("click", () => {
+  closeVisualizationModal();
+});
+
+applyVisualizationButton.addEventListener("click", () => {
+  applyVisualization();
+});
+
+visualizationModal.addEventListener("pointerdown", (event) => {
+  if (event.target === visualizationModal) {
+    closeVisualizationModal();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !visualizationModal.classList.contains("is-hidden")) {
+    closeVisualizationModal();
+  }
 });
 
 bootstrap();
