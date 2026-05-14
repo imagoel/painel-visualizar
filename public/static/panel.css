@@ -190,30 +190,6 @@ body {
   z-index: 24;
 }
 
-.panel-watermark {
-  position: fixed;
-  bottom: 22px;
-  z-index: 20;
-  opacity: 0.28;
-  pointer-events: none;
-}
-
-.panel-watermark.left {
-  left: 20px;
-}
-
-.panel-watermark.right {
-  right: 20px;
-}
-
-.panel-watermark.left img {
-  width: 145px;
-}
-
-.panel-watermark.right img {
-  width: 122px;
-}
-
 @media (max-width: 900px) {
   .panel-topbar {
     padding: 0.7rem;
