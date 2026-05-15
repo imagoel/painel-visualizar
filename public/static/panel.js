@@ -124,13 +124,25 @@ function renderVisualizationOptions() {
   visualizationOptions.innerHTML = state.availableSystems
     .map(
       (system) => `
-        <label class="visualization-option">
-          <input type="checkbox" value="${escapeHtml(system.id)}" ${selected.has(String(system.id)) ? "checked" : ""} />
-          <span>
-            <strong>${escapeHtml(system.name)}</strong>
-            <small>${escapeHtml(system.description || "Sistema disponivel")}</small>
-          </span>
-        </label>
+        <div class="visualization-option" data-system-id="${escapeHtml(system.id)}">
+          <input
+            type="checkbox"
+            data-field="enabled"
+            value="${escapeHtml(system.id)}"
+            ${selected.has(String(system.id)) ? "checked" : ""}
+            aria-label="Exibir ${escapeHtml(system.name)}"
+          />
+          <div class="visualization-option-fields">
+            <input data-field="name" type="text" value="${escapeHtml(system.name)}" placeholder="Nome do sistema" />
+            <input data-field="url" type="url" value="${escapeHtml(system.url)}" placeholder="https://link-do-sistema" />
+            <input
+              data-field="description"
+              type="text"
+              value="${escapeHtml(system.description || "")}"
+              placeholder="Descricao opcional"
+            />
+          </div>
+        </div>
       `
     )
     .join("");
@@ -276,21 +288,72 @@ function closeVisualizationModal(shouldResume = true) {
   showControls();
 }
 
-function applyVisualization() {
-  const checkedIds = Array.from(visualizationOptions.querySelectorAll('input[type="checkbox"]:checked')).map(
+function getCheckedVisualizationIds() {
+  return Array.from(visualizationOptions.querySelectorAll('input[data-field="enabled"]:checked')).map(
     (input) => input.value
   );
+}
+
+async function saveEditedSystems() {
+  const rows = Array.from(visualizationOptions.querySelectorAll(".visualization-option[data-system-id]"));
+
+  for (const row of rows) {
+    const id = String(row.dataset.systemId);
+    const original = state.availableSystems.find((system) => String(system.id) === id);
+    if (!original) continue;
+
+    const name = row.querySelector('[data-field="name"]').value.trim();
+    const url = row.querySelector('[data-field="url"]').value.trim();
+    const description = row.querySelector('[data-field="description"]').value.trim();
+
+    if (!name || !url) {
+      throw new Error("Preencha nome e link dos sistemas editados.");
+    }
+
+    const changed =
+      name !== original.name ||
+      url !== original.url ||
+      description !== (original.description || "");
+
+    if (!changed) continue;
+
+    await fetchJson(`/api/panel/systems/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ name, url, description }),
+    });
+  }
+}
+
+async function refreshPanelSystems() {
+  const panelData = await fetchJson("/api/panel/config");
+  state.availableSystems = panelData.systems;
+}
+
+async function applyVisualization() {
+  const checkedIds = getCheckedVisualizationIds();
 
   if (!checkedIds.length && state.availableSystems.length) {
     visualizationMessage.textContent = "Selecione pelo menos um sistema.";
     return;
   }
 
-  state.selectedSystemIds = checkedIds;
-  state.systems = getVisibleSystems();
-  state.current = 0;
-  closeVisualizationModal(false);
-  restartSlideshow();
+  try {
+    applyVisualizationButton.disabled = true;
+    visualizationMessage.textContent = "";
+    await saveEditedSystems();
+    await refreshPanelSystems();
+
+    state.selectedSystemIds = checkedIds;
+    state.systems = getVisibleSystems();
+    state.current = 0;
+    closeVisualizationModal(false);
+    restartSlideshow();
+  } catch (error) {
+    visualizationMessage.style.color = "#a5264c";
+    visualizationMessage.textContent = error.message;
+  } finally {
+    applyVisualizationButton.disabled = false;
+  }
 }
 
 function showControls() {
@@ -311,9 +374,7 @@ async function addSystem(event) {
   const formData = new FormData(addSystemForm);
   const name = String(formData.get("name") || "").trim();
   const url = String(formData.get("url") || "").trim();
-  const checkedIds = Array.from(visualizationOptions.querySelectorAll('input[type="checkbox"]:checked')).map(
-    (input) => input.value
-  );
+  const checkedIds = getCheckedVisualizationIds();
 
   try {
     const payload = await fetchJson("/api/panel/systems", {

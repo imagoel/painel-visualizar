@@ -249,6 +249,46 @@ app.post("/api/panel/systems", requireAuth, (req, res) => {
   }
 });
 
+app.put("/api/panel/systems/:id", requireAuth, (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const existingSystem = database.getSystemById(id);
+    const allowedSystems = database.getSystemsForUser(req.currentUser);
+    const canEdit = allowedSystems.some((system) => system.id === id);
+
+    if (!existingSystem || !canEdit) {
+      return res.status(404).json({ message: "Sistema nao encontrado para este usuario." });
+    }
+
+    const name = String(req.body.name || "").trim();
+    const url = String(req.body.url || "").trim();
+
+    if (!name || !url) {
+      return res.status(400).json({ message: "Informe nome e link do sistema." });
+    }
+
+    const parsedUrl = new URL(url);
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      return res.status(400).json({ message: "Use um link iniciado com http ou https." });
+    }
+
+    const system = database.updateSystem({
+      id,
+      name,
+      slug: existingSystem.slug,
+      description: String(req.body.description || "").trim(),
+      url,
+      position: existingSystem.position,
+      isActive: existingSystem.isActive,
+    });
+    const systems = database.getSystemsForUser(req.currentUser);
+
+    return res.json({ system, systems });
+  } catch (error) {
+    return res.status(400).json({ message: "Nao foi possivel editar o sistema." });
+  }
+});
+
 app.get("/api/admin/bootstrap", requireAdmin, (req, res) => {
   res.json({
     user: req.currentUser,

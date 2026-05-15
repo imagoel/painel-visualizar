@@ -231,6 +231,11 @@ function createDatabase(filePath) {
       FROM systems
       ORDER BY position ASC, name ASC
     `),
+    systemById: db.prepare(`
+      SELECT *
+      FROM systems
+      WHERE id = ?
+    `),
     systemsForSecretaria: db.prepare(`
       SELECT
         systems.*,
@@ -351,6 +356,20 @@ function createDatabase(filePath) {
         position: item.position,
         isActive: Boolean(item.is_active),
       }));
+    },
+    getSystemById(id) {
+      const item = statements.systemById.get(id);
+      if (!item) return null;
+
+      return {
+        id: item.id,
+        name: item.name,
+        slug: item.slug,
+        description: item.description,
+        url: item.url,
+        position: item.position,
+        isActive: Boolean(item.is_active),
+      };
     },
     listUsers() {
       return statements.allUsers.all().map((item) => ({
