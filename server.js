@@ -212,6 +212,43 @@ app.get("/api/panel/config", requireAuth, (req, res) => {
   });
 });
 
+app.post("/api/panel/systems", requireAuth, (req, res) => {
+  try {
+    const name = String(req.body.name || "").trim();
+    const url = String(req.body.url || "").trim();
+
+    if (!name || !url) {
+      return res.status(400).json({ message: "Informe nome e link do sistema." });
+    }
+
+    const parsedUrl = new URL(url);
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      return res.status(400).json({ message: "Use um link iniciado com http ou https." });
+    }
+
+    if (req.currentUser.role !== "admin" && !req.currentUser.secretariaId) {
+      return res.status(400).json({ message: "Usuario sem secretaria vinculada." });
+    }
+
+    const baseSlug = slugify(req.body.slug || name) || "sistema";
+    const payload = normalizeSystemPayload({
+      ...req.body,
+      name,
+      url,
+      slug: `${baseSlug}-${Date.now().toString(36)}`,
+      description: req.body.description || "Sistema adicionado pela visualizacao",
+      position: database.listSystems().length + 1,
+      isActive: true,
+    });
+
+    const system = database.createSystemForSecretaria(payload, req.currentUser.secretariaId);
+    const systems = database.getSystemsForUser(req.currentUser);
+    return res.status(201).json({ system, systems });
+  } catch (error) {
+    return res.status(400).json({ message: "Nao foi possivel adicionar o sistema." });
+  }
+});
+
 app.get("/api/admin/bootstrap", requireAdmin, (req, res) => {
   res.json({
     user: req.currentUser,

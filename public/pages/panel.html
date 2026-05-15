@@ -13,6 +13,7 @@
         <button id="logoutButton" class="ghost-button" type="button">Sair</button>
       </div>
     </header>
+    <div id="controlsRevealZone" class="controls-reveal-zone" aria-hidden="true"></div>
 
     <main class="panel-shell">
       <div id="stage" class="tv-stage"></div>
@@ -28,6 +29,13 @@
         </div>
 
         <div id="visualizationOptions" class="visualization-options"></div>
+
+        <form id="addSystemForm" class="visualization-add-form">
+          <h3>Adicionar sistema</h3>
+          <input name="name" type="text" placeholder="Nome do sistema" required />
+          <input name="url" type="url" placeholder="https://link-do-sistema" required />
+          <button type="submit" class="secondary-button">Adicionar</button>
+        </form>
 
         <p id="visualizationMessage" class="visualization-message" role="alert"></p>
 

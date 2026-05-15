@@ -28,21 +28,40 @@ body {
 
 .panel-topbar {
   position: fixed;
-  top: 14px;
-  right: 14px;
+  top: 18px;
+  left: 50%;
   z-index: 30;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 1rem;
   padding: 0;
   background: transparent;
   backdrop-filter: none;
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.panel-topbar.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -14px);
 }
 
 .panel-actions {
   display: flex;
   gap: 0.55rem;
+}
+
+.controls-reveal-zone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 29;
+  height: 88px;
+  background: transparent;
 }
 
 .ghost-button {
@@ -221,6 +240,8 @@ body {
 .visualization-options {
   display: grid;
   gap: 0.55rem;
+  max-height: 260px;
+  overflow: auto;
 }
 
 .visualization-option {
@@ -258,6 +279,29 @@ body {
   font-size: 0.9rem;
 }
 
+.visualization-add-form {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(17, 31, 48, 0.12);
+}
+
+.visualization-add-form h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.visualization-add-form input {
+  width: 100%;
+  border: 1px solid rgba(17, 31, 48, 0.12);
+  border-radius: 8px;
+  padding: 0.68rem 0.75rem;
+  color: #172033;
+  background: #fff;
+  font: inherit;
+}
+
 .visualization-actions {
   display: flex;
   justify-content: flex-end;
@@ -288,7 +332,7 @@ body {
 @media (max-width: 900px) {
   .panel-topbar {
     top: 10px;
-    right: 10px;
+    width: calc(100vw - 20px);
   }
 
   .ghost-button {

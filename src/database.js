@@ -307,6 +307,11 @@ function createDatabase(filePath) {
       INSERT INTO secretaria_systems (secretaria_id, system_id, display_order)
       VALUES (?, ?, ?)
     `),
+    maxAssignmentOrder: db.prepare(`
+      SELECT COALESCE(MAX(display_order), 0) AS max_order
+      FROM secretaria_systems
+      WHERE secretaria_id = ?
+    `),
   };
 
   const replaceSecretariaSystems = db.transaction((secretariaId, items) => {
@@ -406,6 +411,23 @@ function createDatabase(filePath) {
         position: payload.position,
         is_active: boolToInt(payload.isActive),
       });
+
+      return this.listSystems().find((item) => item.id === result.lastInsertRowid);
+    },
+    createSystemForSecretaria(payload, secretariaId) {
+      const result = statements.insertSystem.run({
+        name: payload.name,
+        slug: payload.slug,
+        description: payload.description || "",
+        url: payload.url || "",
+        position: payload.position,
+        is_active: boolToInt(payload.isActive),
+      });
+
+      if (secretariaId) {
+        const nextOrder = statements.maxAssignmentOrder.get(secretariaId).max_order + 1;
+        statements.insertAssignment.run(secretariaId, result.lastInsertRowid, nextOrder);
+      }
 
       return this.listSystems().find((item) => item.id === result.lastInsertRowid);
     },

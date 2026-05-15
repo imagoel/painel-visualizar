@@ -3,12 +3,14 @@ const dotsEl = document.getElementById("dots");
 const progressEl = document.getElementById("progress");
 const logoutButton = document.getElementById("logoutButton");
 const editViewButton = document.getElementById("editViewButton");
+const controlsRevealZone = document.getElementById("controlsRevealZone");
 const visualizationModal = document.getElementById("visualizationModal");
 const visualizationOptions = document.getElementById("visualizationOptions");
 const visualizationMessage = document.getElementById("visualizationMessage");
 const closeVisualizationButton = document.getElementById("closeVisualizationButton");
 const cancelVisualizationButton = document.getElementById("cancelVisualizationButton");
 const applyVisualizationButton = document.getElementById("applyVisualizationButton");
+const addSystemForm = document.getElementById("addSystemForm");
 
 const state = {
   user: null,
@@ -26,6 +28,7 @@ const state = {
   dots: [],
   isPaused: false,
   isEditing: false,
+  controlsTimer: null,
 };
 
 function fetchJson(url, options = {}) {
@@ -105,6 +108,7 @@ function getVisibleSystems() {
 
 function renderVisualizationOptions() {
   visualizationMessage.textContent = "";
+  visualizationMessage.style.color = "#a5264c";
 
   if (!state.availableSystems.length) {
     visualizationOptions.innerHTML = `
@@ -263,10 +267,13 @@ function closeVisualizationModal(shouldResume = true) {
   state.isEditing = false;
   visualizationModal.classList.add("is-hidden");
   visualizationMessage.textContent = "";
+  visualizationMessage.style.color = "#a5264c";
 
   if (shouldResume) {
     startSlideshow();
   }
+
+  showControls();
 }
 
 function applyVisualization() {
@@ -286,6 +293,51 @@ function applyVisualization() {
   restartSlideshow();
 }
 
+function showControls() {
+  document.querySelector(".panel-topbar").classList.remove("is-hidden");
+  clearTimeout(state.controlsTimer);
+
+  state.controlsTimer = setTimeout(() => {
+    if (!state.isEditing) {
+      document.querySelector(".panel-topbar").classList.add("is-hidden");
+    }
+  }, 4500);
+}
+
+async function addSystem(event) {
+  event.preventDefault();
+  visualizationMessage.textContent = "";
+
+  const formData = new FormData(addSystemForm);
+  const name = String(formData.get("name") || "").trim();
+  const url = String(formData.get("url") || "").trim();
+  const checkedIds = Array.from(visualizationOptions.querySelectorAll('input[type="checkbox"]:checked')).map(
+    (input) => input.value
+  );
+
+  try {
+    const payload = await fetchJson("/api/panel/systems", {
+      method: "POST",
+      body: JSON.stringify({ name, url }),
+    });
+
+    state.availableSystems = payload.systems;
+    state.selectedSystemIds = Array.from(new Set([...checkedIds, String(payload.system.id)]));
+    state.systems = getVisibleSystems();
+    state.current = 0;
+
+    addSystemForm.reset();
+    renderVisualizationOptions();
+    restartSlideshow();
+    pauseSlideshow();
+    visualizationMessage.style.color = "#0f5d8f";
+    visualizationMessage.textContent = "Sistema adicionado.";
+  } catch (error) {
+    visualizationMessage.style.color = "#a5264c";
+    visualizationMessage.textContent = error.message;
+  }
+}
+
 function registerInteractions() {
   const onUserInteraction = () => {
     pauseSlideshow();
@@ -293,8 +345,19 @@ function registerInteractions() {
   };
 
   document.addEventListener("pointerdown", onUserInteraction, { passive: true });
-  document.addEventListener("mousemove", onUserInteraction, { passive: true });
+  document.addEventListener(
+    "mousemove",
+    (event) => {
+      onUserInteraction();
+      if (event.clientY <= 110) {
+        showControls();
+      }
+    },
+    { passive: true }
+  );
   document.addEventListener("keydown", onUserInteraction);
+  controlsRevealZone.addEventListener("pointerenter", showControls);
+  controlsRevealZone.addEventListener("pointermove", showControls);
 
   let hadFocus = true;
   setInterval(() => {
@@ -337,6 +400,7 @@ async function bootstrap() {
     startSlideshow();
     registerInteractions();
     setupInitialFullscreen();
+    showControls();
   } catch (error) {
     window.location.href = "/login";
   }
@@ -361,6 +425,10 @@ cancelVisualizationButton.addEventListener("click", () => {
 
 applyVisualizationButton.addEventListener("click", () => {
   applyVisualization();
+});
+
+addSystemForm.addEventListener("submit", (event) => {
+  addSystem(event);
 });
 
 visualizationModal.addEventListener("pointerdown", (event) => {
