@@ -289,6 +289,34 @@ app.put("/api/panel/systems/:id", requireAuth, (req, res) => {
   }
 });
 
+app.delete("/api/panel/systems/:id", requireAuth, (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const existingSystem = database.getSystemById(id);
+    const allowedSystems = database.getSystemsForUser(req.currentUser);
+    const canRemove = allowedSystems.some((system) => system.id === id);
+
+    if (!existingSystem || !canRemove) {
+      return res.status(404).json({ message: "Sistema nao encontrado para este usuario." });
+    }
+
+    if (req.currentUser.role === "admin") {
+      database.deactivateSystem(id);
+    } else {
+      if (!req.currentUser.secretariaId) {
+        return res.status(400).json({ message: "Usuario sem secretaria vinculada." });
+      }
+
+      database.removeSystemFromSecretaria(req.currentUser.secretariaId, id);
+    }
+
+    const systems = database.getSystemsForUser(req.currentUser);
+    return res.json({ success: true, systems });
+  } catch (error) {
+    return res.status(400).json({ message: "Nao foi possivel excluir o sistema." });
+  }
+});
+
 app.get("/api/admin/bootstrap", requireAdmin, (req, res) => {
   res.json({
     user: req.currentUser,

@@ -246,7 +246,7 @@ body {
 
 .visualization-option {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   gap: 0.7rem;
   align-items: center;
   padding: 0.72rem 0.78rem;
@@ -273,6 +273,21 @@ body {
   color: #172033;
   background: #fff;
   font: inherit;
+}
+
+.remove-system-button {
+  align-self: start;
+  border: 1px solid rgba(165, 38, 76, 0.22);
+  border-radius: 8px;
+  padding: 0.58rem 0.72rem;
+  color: #8f1f41;
+  background: rgba(165, 38, 76, 0.08);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.remove-system-button:hover {
+  background: rgba(165, 38, 76, 0.14);
 }
 
 .visualization-message {
@@ -346,5 +361,14 @@ body {
 
   .ghost-button {
     padding: 0.62rem 0.72rem;
+  }
+
+  .visualization-option {
+    grid-template-columns: auto 1fr;
+  }
+
+  .remove-system-button {
+    grid-column: 2;
+    width: max-content;
   }
 }

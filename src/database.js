@@ -280,6 +280,13 @@ function createDatabase(filePath) {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = @id
     `),
+    deactivateSystem: db.prepare(`
+      UPDATE systems
+      SET
+        is_active = 0,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `),
     insertUser: db.prepare(`
       INSERT INTO users (name, email, password_hash, role, secretaria_id, is_active, updated_at)
       VALUES (@name, @email, @password_hash, @role, @secretaria_id, @is_active, CURRENT_TIMESTAMP)
@@ -311,6 +318,11 @@ function createDatabase(filePath) {
     insertAssignment: db.prepare(`
       INSERT INTO secretaria_systems (secretaria_id, system_id, display_order)
       VALUES (?, ?, ?)
+    `),
+    removeAssignment: db.prepare(`
+      DELETE FROM secretaria_systems
+      WHERE secretaria_id = ?
+        AND system_id = ?
     `),
     maxAssignmentOrder: db.prepare(`
       SELECT COALESCE(MAX(display_order), 0) AS max_order
@@ -463,6 +475,10 @@ function createDatabase(filePath) {
 
       return this.listSystems().find((item) => item.id === payload.id);
     },
+    deactivateSystem(id) {
+      statements.deactivateSystem.run(id);
+      return this.getSystemById(id);
+    },
     createUser(payload) {
       const result = statements.insertUser.run({
         name: payload.name,
@@ -498,6 +514,10 @@ function createDatabase(filePath) {
     },
     replaceSecretariaSystems(secretariaId, items) {
       replaceSecretariaSystems(secretariaId, items);
+      return this.listAssignments().filter((item) => item.secretariaId === secretariaId);
+    },
+    removeSystemFromSecretaria(secretariaId, systemId) {
+      statements.removeAssignment.run(secretariaId, systemId);
       return this.listAssignments().filter((item) => item.secretariaId === secretariaId);
     },
   };

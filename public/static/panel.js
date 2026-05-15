@@ -142,6 +142,14 @@ function renderVisualizationOptions() {
               placeholder="Descricao opcional"
             />
           </div>
+          <button
+            class="remove-system-button"
+            type="button"
+            data-action="remove-system"
+            aria-label="Excluir ${escapeHtml(system.name)}"
+          >
+            Excluir
+          </button>
         </div>
       `
     )
@@ -329,6 +337,13 @@ async function refreshPanelSystems() {
   state.availableSystems = panelData.systems;
 }
 
+function syncSelectedSystemsAfterRefresh(previouslySelectedIds) {
+  const availableIds = new Set(state.availableSystems.map((system) => String(system.id)));
+  state.selectedSystemIds = previouslySelectedIds.filter((id) => availableIds.has(String(id)));
+  state.systems = getVisibleSystems();
+  state.current = 0;
+}
+
 async function applyVisualization() {
   const checkedIds = getCheckedVisualizationIds();
 
@@ -343,9 +358,7 @@ async function applyVisualization() {
     await saveEditedSystems();
     await refreshPanelSystems();
 
-    state.selectedSystemIds = checkedIds;
-    state.systems = getVisibleSystems();
-    state.current = 0;
+    syncSelectedSystemsAfterRefresh(checkedIds);
     closeVisualizationModal(false);
     restartSlideshow();
   } catch (error) {
@@ -353,6 +366,31 @@ async function applyVisualization() {
     visualizationMessage.textContent = error.message;
   } finally {
     applyVisualizationButton.disabled = false;
+  }
+}
+
+async function removeSystem(systemId) {
+  const system = state.availableSystems.find((item) => String(item.id) === String(systemId));
+  if (!system) return;
+
+  const shouldRemove = window.confirm(`Excluir "${system.name}" da visualizacao?`);
+  if (!shouldRemove) return;
+
+  try {
+    visualizationMessage.textContent = "";
+    const checkedIds = getCheckedVisualizationIds().filter((id) => String(id) !== String(systemId));
+    const payload = await fetchJson(`/api/panel/systems/${systemId}`, { method: "DELETE" });
+
+    state.availableSystems = payload.systems;
+    syncSelectedSystemsAfterRefresh(checkedIds);
+    renderVisualizationOptions();
+    restartSlideshow();
+    pauseSlideshow();
+    visualizationMessage.style.color = "#0f5d8f";
+    visualizationMessage.textContent = "Sistema excluido.";
+  } catch (error) {
+    visualizationMessage.style.color = "#a5264c";
+    visualizationMessage.textContent = error.message;
   }
 }
 
@@ -490,6 +528,16 @@ applyVisualizationButton.addEventListener("click", () => {
 
 addSystemForm.addEventListener("submit", (event) => {
   addSystem(event);
+});
+
+visualizationOptions.addEventListener("click", (event) => {
+  const button = event.target.closest('button[data-action="remove-system"]');
+  if (!button) return;
+
+  const row = button.closest(".visualization-option[data-system-id]");
+  if (!row) return;
+
+  removeSystem(row.dataset.systemId);
 });
 
 visualizationModal.addEventListener("pointerdown", (event) => {
