@@ -54,6 +54,36 @@
             <span>Usuarios</span>
             <strong id="userCount">0</strong>
           </article>
+          <article class="stat-card">
+            <span>Telefones hotspot</span>
+            <strong id="hotspotPhoneCount">0</strong>
+          </article>
+        </section>
+
+        <section class="admin-card wide hotspot-card">
+          <div class="card-header split">
+            <div>
+              <p class="eyebrow">Hotspot</p>
+              <h3>Telefones capturados</h3>
+            </div>
+
+            <a class="primary-link-button" href="/api/admin/hotspot/telefones.csv">Exportar CSV</a>
+          </div>
+
+          <div class="table-wrap hotspot-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Telefone</th>
+                  <th>MAC</th>
+                  <th>IP</th>
+                  <th>Acessos</th>
+                  <th>Ultimo registro</th>
+                </tr>
+              </thead>
+              <tbody id="hotspotPhonesTable"></tbody>
+            </table>
+          </div>
         </section>
 
         <section class="admin-grid">

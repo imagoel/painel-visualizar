@@ -45,9 +45,23 @@ Recomendacao: altere as senhas iniciais apos subir o sistema em producao.
 - `/login`: tela de autenticacao
 - `/painel`: visualizacao dos sistemas liberados para o usuario
 - `/admin`: area administrativa
+- `/api/hotspot/telefones`: captura publica de telefones do hotspot
+- `/api/admin/hotspot/telefones.csv`: exportacao CSV dos telefones capturados
 
 ## Persistencia
 
 O banco SQLite fica em `data/painel.db`.
 
 No `docker-compose.yml`, o volume `painel_data` garante persistencia de usuarios, secretarias e sistemas mesmo apos redeploy.
+
+## Captura de telefones do hotspot
+
+O endpoint publico espera `POST` com `telefone`, `mac`, `ip` e `origem`.
+
+Exemplo para liberar o painel antes da autenticacao no MikroTik:
+
+```mikrotik
+/ip hotspot walled-garden ip add action=accept protocol=tcp dst-address=10.75.2.4 dst-port=38520
+```
+
+Depois do login administrativo, os telefones aparecem em `/admin` e podem ser baixados em CSV.

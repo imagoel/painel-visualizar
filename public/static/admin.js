@@ -1,11 +1,13 @@
 const secretariaCount = document.getElementById("secretariaCount");
 const systemCount = document.getElementById("systemCount");
 const userCount = document.getElementById("userCount");
+const hotspotPhoneCount = document.getElementById("hotspotPhoneCount");
 const adminWelcome = document.getElementById("adminWelcome");
 const adminMessage = document.getElementById("adminMessage");
 const secretariasTable = document.getElementById("secretariasTable");
 const systemsTable = document.getElementById("systemsTable");
 const usersTable = document.getElementById("usersTable");
+const hotspotPhonesTable = document.getElementById("hotspotPhonesTable");
 const permissionSecretariaSelect = document.getElementById("permissionSecretariaSelect");
 const permissionsGrid = document.getElementById("permissionsGrid");
 const newUserSecretaria = document.getElementById("newUserSecretaria");
@@ -22,6 +24,8 @@ const state = {
   systems: [],
   users: [],
   assignments: [],
+  hotspotTelefones: [],
+  hotspotTelefoneCount: 0,
   selectedSecretariaId: null,
 };
 
@@ -67,10 +71,22 @@ function setMessage(text, isError = false) {
   adminMessage.style.color = isError ? "#a5264c" : "#0f5d8f";
 }
 
+function formatDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(`${value}Z`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+}
+
 function renderStats() {
   secretariaCount.textContent = String(state.secretarias.length);
   systemCount.textContent = String(state.systems.length);
   userCount.textContent = String(state.users.length);
+  hotspotPhoneCount.textContent = String(state.hotspotTelefoneCount || state.hotspotTelefones.length);
   adminWelcome.textContent = state.user ? `${state.user.name} (${state.user.email})` : "";
 }
 
@@ -205,6 +221,32 @@ function renderPermissionsGrid() {
     .join("");
 }
 
+function renderHotspotPhonesTable() {
+  if (!state.hotspotTelefones.length) {
+    hotspotPhonesTable.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty-state">Nenhum telefone capturado ainda.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  hotspotPhonesTable.innerHTML = state.hotspotTelefones
+    .slice(0, 100)
+    .map(
+      (item) => `
+        <tr>
+          <td><strong>${escapeHtml(item.telefone)}</strong></td>
+          <td>${escapeHtml(item.mac || "-")}</td>
+          <td>${escapeHtml(item.ip || "-")}</td>
+          <td>${escapeHtml(item.totalAcessos || 1)}</td>
+          <td>${escapeHtml(formatDateTime(item.lastSeenAt))}</td>
+        </tr>
+      `
+    )
+    .join("");
+}
+
 function renderAll() {
   renderStats();
   renderSecretariaOptions();
@@ -212,6 +254,7 @@ function renderAll() {
   renderSystemsTable();
   renderUsersTable();
   renderPermissionsGrid();
+  renderHotspotPhonesTable();
 }
 
 async function bootstrap() {
@@ -222,6 +265,8 @@ async function bootstrap() {
     state.systems = payload.systems;
     state.users = payload.users;
     state.assignments = payload.assignments;
+    state.hotspotTelefones = payload.hotspotTelefones || [];
+    state.hotspotTelefoneCount = payload.hotspotTelefoneCount || state.hotspotTelefones.length;
     renderAll();
   } catch (error) {
     window.location.href = "/login";

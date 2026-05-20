@@ -104,6 +104,21 @@ function ensureSchema(db) {
       FOREIGN KEY (secretaria_id) REFERENCES secretarias (id) ON DELETE CASCADE,
       FOREIGN KEY (system_id) REFERENCES systems (id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS hotspot_telefones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      telefone TEXT NOT NULL UNIQUE,
+      mac TEXT NOT NULL DEFAULT '',
+      ip TEXT NOT NULL DEFAULT '',
+      origem TEXT NOT NULL DEFAULT 'hotspot',
+      user_agent TEXT NOT NULL DEFAULT '',
+      total_acessos INTEGER NOT NULL DEFAULT 1,
+      first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_hotspot_telefones_last_seen
+      ON hotspot_telefones (last_seen_at DESC);
   `);
 }
 
@@ -251,6 +266,45 @@ function createDatabase(filePath) {
       FROM secretaria_systems
       ORDER BY secretaria_id ASC, display_order ASC
     `),
+    allHotspotTelefones: db.prepare(`
+      SELECT *
+      FROM hotspot_telefones
+      ORDER BY last_seen_at DESC, id DESC
+      LIMIT ?
+    `),
+    hotspotTelefoneCount: db.prepare(`
+      SELECT COUNT(*) AS total
+      FROM hotspot_telefones
+    `),
+    upsertHotspotTelefone: db.prepare(`
+      INSERT INTO hotspot_telefones (
+        telefone,
+        mac,
+        ip,
+        origem,
+        user_agent,
+        total_acessos,
+        first_seen_at,
+        last_seen_at
+      )
+      VALUES (
+        @telefone,
+        @mac,
+        @ip,
+        @origem,
+        @user_agent,
+        1,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+      )
+      ON CONFLICT(telefone) DO UPDATE SET
+        mac = excluded.mac,
+        ip = excluded.ip,
+        origem = excluded.origem,
+        user_agent = excluded.user_agent,
+        total_acessos = hotspot_telefones.total_acessos + 1,
+        last_seen_at = CURRENT_TIMESTAMP
+    `),
     insertSecretaria: db.prepare(`
       INSERT INTO secretarias (name, slug, is_active, updated_at)
       VALUES (@name, @slug, @is_active, CURRENT_TIMESTAMP)
@@ -394,6 +448,33 @@ function createDatabase(filePath) {
         systemId: item.system_id,
         displayOrder: item.display_order,
       }));
+    },
+    listHotspotTelefones(limit = 1000) {
+      return statements.allHotspotTelefones.all(Number(limit) || 1000).map((item) => ({
+        id: item.id,
+        telefone: item.telefone,
+        mac: item.mac,
+        ip: item.ip,
+        origem: item.origem,
+        userAgent: item.user_agent,
+        totalAcessos: item.total_acessos,
+        firstSeenAt: item.first_seen_at,
+        lastSeenAt: item.last_seen_at,
+      }));
+    },
+    countHotspotTelefones() {
+      return statements.hotspotTelefoneCount.get().total;
+    },
+    saveHotspotTelefone(payload) {
+      statements.upsertHotspotTelefone.run({
+        telefone: payload.telefone,
+        mac: payload.mac || "",
+        ip: payload.ip || "",
+        origem: payload.origem || "hotspot",
+        user_agent: payload.userAgent || "",
+      });
+
+      return this.listHotspotTelefones(1).find((item) => item.telefone === payload.telefone) || null;
     },
     getSystemsForUser(user) {
       if (!user) return [];

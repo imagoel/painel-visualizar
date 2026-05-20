@@ -144,6 +144,36 @@ function normalizeUserPayload(body) {
   };
 }
 
+function normalizeHotspotTelefonePayload(req) {
+  const body = req.body || {};
+  const telefone = String(body.telefone || "").replace(/\D/g, "").slice(0, 11);
+  const forwardedFor = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+
+  return {
+    telefone,
+    mac: String(body.mac || "").trim().slice(0, 32),
+    ip: String(body.ip || forwardedFor || req.socket.remoteAddress || "").trim().slice(0, 64),
+    origem: String(body.origem || "hotspot-amargosa").trim().slice(0, 80),
+    userAgent: String(req.headers["user-agent"] || "").trim().slice(0, 300),
+  };
+}
+
+function allowHotspotCaptureCors(req, res, next) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+}
+
+function csvEscape(value) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
 app.get("/", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/login");
@@ -198,6 +228,18 @@ app.post("/api/auth/logout", requireAuth, (req, res) => {
     res.clearCookie("connect.sid");
     res.json({ success: true });
   });
+});
+
+app.options("/api/hotspot/telefones", allowHotspotCaptureCors);
+app.post("/api/hotspot/telefones", allowHotspotCaptureCors, (req, res) => {
+  const payload = normalizeHotspotTelefonePayload(req);
+
+  if (payload.telefone.length !== 11 || /^(\d)\1{10}$/.test(payload.telefone)) {
+    return res.status(400).json({ message: "Telefone invalido." });
+  }
+
+  const item = database.saveHotspotTelefone(payload);
+  return res.status(201).json({ success: true, item });
 });
 
 app.get("/api/panel/config", requireAuth, (req, res) => {
@@ -324,7 +366,46 @@ app.get("/api/admin/bootstrap", requireAdmin, (req, res) => {
     systems: database.listSystems(),
     users: database.listUsers(),
     assignments: database.listAssignments(),
+    hotspotTelefones: database.listHotspotTelefones(1000),
+    hotspotTelefoneCount: database.countHotspotTelefones(),
   });
+});
+
+app.get("/api/admin/hotspot/telefones", requireAdmin, (req, res) => {
+  res.json({
+    items: database.listHotspotTelefones(2000),
+    total: database.countHotspotTelefones(),
+  });
+});
+
+app.get("/api/admin/hotspot/telefones.csv", requireAdmin, (req, res) => {
+  const items = database.listHotspotTelefones(100000);
+  const header = [
+    "telefone",
+    "mac",
+    "ip",
+    "origem",
+    "total_acessos",
+    "primeiro_acesso",
+    "ultimo_acesso",
+    "user_agent",
+  ];
+  const rows = items.map((item) => [
+    item.telefone,
+    item.mac,
+    item.ip,
+    item.origem,
+    item.totalAcessos,
+    item.firstSeenAt,
+    item.lastSeenAt,
+    item.userAgent,
+  ]);
+  const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\r\n");
+
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", "attachment; filename=telefones-hotspot.csv");
+  return res.send(`\uFEFF${csv}\r\n`);
 });
 
 app.post("/api/admin/secretarias", requireAdmin, (req, res) => {
