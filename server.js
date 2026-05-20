@@ -174,6 +174,54 @@ function csvEscape(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
+function formatCsvDateTime(value) {
+  if (!value) return "";
+
+  const date = new Date(`${value}Z`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function parseDeviceVersion(userAgent) {
+  const value = String(userAgent || "");
+  if (!value) return "Nao identificado";
+
+  const android = value.match(/Android\s+([\d.]+)/i);
+  if (android) {
+    const model = value
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => /^(SM-|Moto|M200|M201|M210|Moto|Redmi|Pixel|Mi |RMX|CPH|ONEPLUS|LM-|XT)/i.test(part));
+
+    return model ? `Android ${android[1]} - ${model}` : `Android ${android[1]}`;
+  }
+
+  const ios = value.match(/(?:iPhone|CPU iPhone|CPU) OS ([\d_]+)/i);
+  if (ios && /iPhone/i.test(value)) {
+    return `iPhone iOS ${ios[1].replace(/_/g, ".")}`;
+  }
+
+  const ipad = value.match(/CPU OS ([\d_]+)/i);
+  if (ipad && /iPad/i.test(value)) {
+    return `iPad iOS ${ipad[1].replace(/_/g, ".")}`;
+  }
+
+  if (/Windows/i.test(value)) return "Windows";
+  if (/Macintosh/i.test(value)) return "macOS";
+  if (/Linux/i.test(value)) return "Linux";
+
+  return "Nao identificado";
+}
+
 app.get("/", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/login");
@@ -381,26 +429,18 @@ app.get("/api/admin/hotspot/telefones", requireAdmin, (req, res) => {
 app.get("/api/admin/hotspot/telefones.csv", requireAdmin, (req, res) => {
   const items = database.listHotspotTelefones(100000);
   const header = [
-    "telefone",
+    "numero do telefone",
     "mac",
-    "ip",
-    "origem",
-    "total_acessos",
-    "primeiro_acesso",
-    "ultimo_acesso",
-    "user_agent",
+    "data/horario de acesso",
+    "versao do celular",
   ];
   const rows = items.map((item) => [
     item.telefone,
     item.mac,
-    item.ip,
-    item.origem,
-    item.totalAcessos,
-    item.firstSeenAt,
-    item.lastSeenAt,
-    item.userAgent,
+    formatCsvDateTime(item.lastSeenAt),
+    parseDeviceVersion(item.userAgent),
   ]);
-  const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\r\n");
+  const csv = [header, ...rows].map((row) => row.map(csvEscape).join(";")).join("\r\n");
 
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
