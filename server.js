@@ -145,7 +145,10 @@ function normalizeUserPayload(body) {
 }
 
 function normalizeHotspotTelefonePayload(req) {
-  const body = req.body || {};
+  const body = {
+    ...(req.query || {}),
+    ...(req.body || {}),
+  };
   const telefone = String(body.telefone || "").replace(/\D/g, "").slice(0, 11);
   const forwardedFor = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
 
@@ -160,7 +163,7 @@ function normalizeHotspotTelefonePayload(req) {
 
 function allowHotspotCaptureCors(req, res, next) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
@@ -172,6 +175,16 @@ function allowHotspotCaptureCors(req, res, next) {
 
 function csvEscape(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
+function saveHotspotTelefoneFromRequest(req, res) {
+  const payload = normalizeHotspotTelefonePayload(req);
+
+  if (payload.telefone.length !== 11 || /^(\d)\1{10}$/.test(payload.telefone)) {
+    return null;
+  }
+
+  return database.saveHotspotTelefone(payload);
 }
 
 function formatCsvDateTime(value) {
@@ -280,14 +293,24 @@ app.post("/api/auth/logout", requireAuth, (req, res) => {
 
 app.options("/api/hotspot/telefones", allowHotspotCaptureCors);
 app.post("/api/hotspot/telefones", allowHotspotCaptureCors, (req, res) => {
-  const payload = normalizeHotspotTelefonePayload(req);
-
-  if (payload.telefone.length !== 11 || /^(\d)\1{10}$/.test(payload.telefone)) {
+  const item = saveHotspotTelefoneFromRequest(req, res);
+  if (!item) {
     return res.status(400).json({ message: "Telefone invalido." });
   }
 
-  const item = database.saveHotspotTelefone(payload);
   return res.status(201).json({ success: true, item });
+});
+
+app.get("/api/hotspot/telefones", allowHotspotCaptureCors, (req, res) => {
+  const item = saveHotspotTelefoneFromRequest(req, res);
+  if (!item) {
+    return res.status(400).json({ message: "Telefone invalido." });
+  }
+
+  const pixel = Buffer.from("R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==", "base64");
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Content-Type", "image/gif");
+  return res.send(pixel);
 });
 
 app.get("/api/panel/config", requireAuth, (req, res) => {
