@@ -145,12 +145,22 @@ function normalizeUserPayload(body) {
   };
 }
 
+function normalizeTelefone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+
+  if (digits.length > 11 && digits.startsWith("55")) {
+    return digits.slice(2).slice(-11);
+  }
+
+  return digits.slice(-11);
+}
+
 function normalizeHotspotTelefonePayload(req) {
   const body = {
     ...(req.query || {}),
     ...(req.body || {}),
   };
-  const telefone = String(body.telefone || "").replace(/\D/g, "").slice(0, 11);
+  const telefone = normalizeTelefone(body.telefone);
   const forwardedFor = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
 
   return {

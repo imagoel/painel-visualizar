@@ -272,6 +272,11 @@ function createDatabase(filePath) {
       ORDER BY last_seen_at DESC, id DESC
       LIMIT ?
     `),
+    hotspotTelefoneByTelefone: db.prepare(`
+      SELECT *
+      FROM hotspot_telefones
+      WHERE telefone = ?
+    `),
     hotspotTelefonesByFirstSeenRange: db.prepare(`
       SELECT *
       FROM hotspot_telefones
@@ -502,7 +507,20 @@ function createDatabase(filePath) {
         user_agent: payload.userAgent || "",
       });
 
-      return this.listHotspotTelefones(1).find((item) => item.telefone === payload.telefone) || null;
+      const item = statements.hotspotTelefoneByTelefone.get(payload.telefone);
+      if (!item) return null;
+
+      return {
+        id: item.id,
+        telefone: item.telefone,
+        mac: item.mac,
+        ip: item.ip,
+        origem: item.origem,
+        userAgent: item.user_agent,
+        totalAcessos: item.total_acessos,
+        firstSeenAt: item.first_seen_at,
+        lastSeenAt: item.last_seen_at,
+      };
     },
     getSystemsForUser(user) {
       if (!user) return [];

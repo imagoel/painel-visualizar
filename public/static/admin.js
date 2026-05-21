@@ -527,6 +527,7 @@ if (hotspotDateFilter) {
     refreshHotspotTelefones();
   });
   updateHotspotExportLink();
+  window.setInterval(refreshHotspotTelefones, 30000);
 }
 
 bootstrap();
