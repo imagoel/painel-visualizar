@@ -507,21 +507,25 @@ app.delete("/api/panel/systems/:id", requireAuth, (req, res) => {
 });
 
 app.get("/api/admin/bootstrap", requireAdmin, (req, res) => {
+  const hotspot = listHotspotExportItems(req.query.hotspotDate || req.query.date);
+
   res.json({
     user: req.currentUser,
     secretarias: database.listSecretarias(),
     systems: database.listSystems(),
     users: database.listUsers(),
     assignments: database.listAssignments(),
-    hotspotTelefones: database.listHotspotTelefones(1000),
-    hotspotTelefoneCount: database.countHotspotTelefones(),
+    hotspotTelefones: hotspot.items.slice(0, 1000),
+    hotspotTelefoneCount: hotspot.filter ? hotspot.items.length : database.countHotspotTelefones(),
   });
 });
 
 app.get("/api/admin/hotspot/telefones", requireAdmin, (req, res) => {
+  const hotspot = listHotspotExportItems(req.query.date);
+
   res.json({
-    items: database.listHotspotTelefones(2000),
-    total: database.countHotspotTelefones(),
+    items: hotspot.items.slice(0, 2000),
+    total: hotspot.filter ? hotspot.items.length : database.countHotspotTelefones(),
   });
 });
 

@@ -82,12 +82,17 @@ function getTodayInputValue() {
 function updateHotspotExportLink() {
   if (!exportHotspotXlsx) return;
 
+  const queryString = getHotspotDateQueryString();
+  exportHotspotXlsx.href = `/api/admin/hotspot/telefones.xlsx${queryString ? `?${queryString}` : ""}`;
+}
+
+function getHotspotDateQueryString(paramName = "date") {
   const params = new URLSearchParams();
   if (hotspotDateFilter && hotspotDateFilter.value) {
-    params.set("date", hotspotDateFilter.value);
+    params.set(paramName, hotspotDateFilter.value);
   }
 
-  exportHotspotXlsx.href = `/api/admin/hotspot/telefones.xlsx${params.toString() ? `?${params}` : ""}`;
+  return params.toString();
 }
 
 function formatDateTime(value) {
@@ -269,7 +274,8 @@ function renderAll() {
 
 async function bootstrap() {
   try {
-    const payload = await fetchJson("/api/admin/bootstrap");
+    const queryString = getHotspotDateQueryString("hotspotDate");
+    const payload = await fetchJson(`/api/admin/bootstrap${queryString ? `?${queryString}` : ""}`);
     state.user = payload.user;
     state.secretarias = payload.secretarias;
     state.systems = payload.systems;
@@ -280,6 +286,19 @@ async function bootstrap() {
     renderAll();
   } catch (error) {
     window.location.href = "/login";
+  }
+}
+
+async function refreshHotspotTelefones() {
+  try {
+    const queryString = getHotspotDateQueryString();
+    const payload = await fetchJson(`/api/admin/hotspot/telefones${queryString ? `?${queryString}` : ""}`);
+    state.hotspotTelefones = payload.items || [];
+    state.hotspotTelefoneCount = payload.total || state.hotspotTelefones.length;
+    renderStats();
+    renderHotspotPhonesTable();
+  } catch (error) {
+    setMessage(error.message, true);
   }
 }
 
@@ -498,7 +517,10 @@ logoutButton.addEventListener("click", async () => {
 
 if (hotspotDateFilter) {
   hotspotDateFilter.value = getTodayInputValue();
-  hotspotDateFilter.addEventListener("input", updateHotspotExportLink);
+  hotspotDateFilter.addEventListener("input", () => {
+    updateHotspotExportLink();
+    refreshHotspotTelefones();
+  });
   updateHotspotExportLink();
 }
 
