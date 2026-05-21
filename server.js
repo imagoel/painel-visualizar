@@ -253,20 +253,15 @@ async function buildHotspotWorkbook(items, filter) {
   worksheet.columns = [
     { header: "Telefone", key: "telefone", width: 18 },
     { header: "MAC", key: "mac", width: 22 },
-    { header: "IP", key: "ip", width: 16 },
-    { header: "Origem", key: "origem", width: 22 },
-    { header: "Acessos", key: "totalAcessos", width: 10 },
-    { header: "Primeira captura", key: "firstSeenAt", width: 22 },
     { header: "Ultimo registro", key: "lastSeenAt", width: 22 },
-    { header: "Versao do celular", key: "deviceVersion", width: 48 },
   ];
 
   worksheet.spliceRows(1, 0, ["Telefones capturados no hotspot"]);
   worksheet.spliceRows(2, 0, [
     filter ? `Filtro: primeira captura em ${filter.label}` : "Filtro: todos os registros",
   ]);
-  worksheet.mergeCells("A1:H1");
-  worksheet.mergeCells("A2:H2");
+  worksheet.mergeCells("A1:C1");
+  worksheet.mergeCells("A2:C2");
 
   worksheet.getCell("A1").font = { bold: true, size: 16, color: { argb: "FFFFFFFF" } };
   worksheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF155A7E" } };
@@ -286,18 +281,13 @@ async function buildHotspotWorkbook(items, filter) {
     worksheet.addRow({
       telefone: item.telefone,
       mac: item.mac,
-      ip: item.ip,
-      origem: item.origem,
-      totalAcessos: item.totalAcessos,
-      firstSeenAt: formatCsvDateTime(item.firstSeenAt),
       lastSeenAt: formatCsvDateTime(item.lastSeenAt),
-      deviceVersion: parseDeviceVersion(item.userAgent),
     });
   });
 
   worksheet.autoFilter = {
     from: { row: 3, column: 1 },
-    to: { row: 3, column: 8 },
+    to: { row: 3, column: 3 },
   };
 
   worksheet.eachRow((row, rowNumber) => {
@@ -317,40 +307,8 @@ async function buildHotspotWorkbook(items, filter) {
 
   worksheet.getColumn("telefone").numFmt = "@";
   worksheet.getColumn("mac").numFmt = "@";
-  worksheet.getColumn("ip").numFmt = "@";
 
   return workbook.xlsx.writeBuffer();
-}
-
-function parseDeviceVersion(userAgent) {
-  const value = String(userAgent || "");
-  if (!value) return "Nao identificado";
-
-  const android = value.match(/Android\s+([\d.]+)/i);
-  if (android) {
-    const model = value
-      .split(";")
-      .map((part) => part.trim())
-      .find((part) => /^(SM-|Moto|M200|M201|M210|Moto|Redmi|Pixel|Mi |RMX|CPH|ONEPLUS|LM-|XT)/i.test(part));
-
-    return model ? `Android ${android[1]} - ${model}` : `Android ${android[1]}`;
-  }
-
-  const ios = value.match(/(?:iPhone|CPU iPhone|CPU) OS ([\d_]+)/i);
-  if (ios && /iPhone/i.test(value)) {
-    return `iPhone iOS ${ios[1].replace(/_/g, ".")}`;
-  }
-
-  const ipad = value.match(/CPU OS ([\d_]+)/i);
-  if (ipad && /iPad/i.test(value)) {
-    return `iPad iOS ${ipad[1].replace(/_/g, ".")}`;
-  }
-
-  if (/Windows/i.test(value)) return "Windows";
-  if (/Macintosh/i.test(value)) return "macOS";
-  if (/Linux/i.test(value)) return "Linux";
-
-  return "Nao identificado";
 }
 
 app.get("/", (req, res) => {
@@ -572,22 +530,12 @@ app.get("/api/admin/hotspot/telefones.csv", requireAdmin, (req, res) => {
   const header = [
     "numero do telefone",
     "mac",
-    "ip",
-    "origem",
-    "acessos",
-    "primeira captura",
-    "data/horario de acesso",
-    "versao do celular",
+    "ultimo registro",
   ];
   const rows = items.map((item) => [
     item.telefone,
     item.mac,
-    item.ip,
-    item.origem,
-    item.totalAcessos,
-    formatCsvDateTime(item.firstSeenAt),
     formatCsvDateTime(item.lastSeenAt),
-    parseDeviceVersion(item.userAgent),
   ]);
   const csv = [header, ...rows].map((row) => row.map(csvEscape).join(";")).join("\r\n");
 
