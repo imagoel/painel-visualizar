@@ -508,6 +508,7 @@ app.delete("/api/panel/systems/:id", requireAuth, (req, res) => {
 
 app.get("/api/admin/bootstrap", requireAdmin, (req, res) => {
   const hotspot = listHotspotExportItems(req.query.hotspotDate || req.query.date);
+  const hotspotTotal = database.countHotspotTelefones();
 
   res.json({
     user: req.currentUser,
@@ -516,16 +517,19 @@ app.get("/api/admin/bootstrap", requireAdmin, (req, res) => {
     users: database.listUsers(),
     assignments: database.listAssignments(),
     hotspotTelefones: hotspot.items.slice(0, 1000),
-    hotspotTelefoneCount: hotspot.filter ? hotspot.items.length : database.countHotspotTelefones(),
+    hotspotTelefoneCount: hotspotTotal,
+    hotspotDiaCount: hotspot.filter ? hotspot.items.length : hotspotTotal,
   });
 });
 
 app.get("/api/admin/hotspot/telefones", requireAdmin, (req, res) => {
   const hotspot = listHotspotExportItems(req.query.date);
+  const hotspotTotal = database.countHotspotTelefones();
 
   res.json({
     items: hotspot.items.slice(0, 2000),
-    total: hotspot.filter ? hotspot.items.length : database.countHotspotTelefones(),
+    total: hotspot.filter ? hotspot.items.length : hotspotTotal,
+    overallTotal: hotspotTotal,
   });
 });
 

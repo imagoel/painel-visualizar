@@ -2,6 +2,7 @@ const secretariaCount = document.getElementById("secretariaCount");
 const systemCount = document.getElementById("systemCount");
 const userCount = document.getElementById("userCount");
 const hotspotPhoneCount = document.getElementById("hotspotPhoneCount");
+const hotspotDayCount = document.getElementById("hotspotDayCount");
 const adminWelcome = document.getElementById("adminWelcome");
 const adminMessage = document.getElementById("adminMessage");
 const secretariasTable = document.getElementById("secretariasTable");
@@ -28,6 +29,7 @@ const state = {
   assignments: [],
   hotspotTelefones: [],
   hotspotTelefoneCount: 0,
+  hotspotDiaCount: 0,
   selectedSecretariaId: null,
 };
 
@@ -110,7 +112,8 @@ function renderStats() {
   secretariaCount.textContent = String(state.secretarias.length);
   systemCount.textContent = String(state.systems.length);
   userCount.textContent = String(state.users.length);
-  hotspotPhoneCount.textContent = String(state.hotspotTelefoneCount || state.hotspotTelefones.length);
+  hotspotPhoneCount.textContent = String(state.hotspotTelefoneCount ?? state.hotspotTelefones.length);
+  hotspotDayCount.textContent = String(state.hotspotDiaCount ?? state.hotspotTelefones.length);
   adminWelcome.textContent = state.user ? `${state.user.name} (${state.user.email})` : "";
 }
 
@@ -282,7 +285,8 @@ async function bootstrap() {
     state.users = payload.users;
     state.assignments = payload.assignments;
     state.hotspotTelefones = payload.hotspotTelefones || [];
-    state.hotspotTelefoneCount = payload.hotspotTelefoneCount || state.hotspotTelefones.length;
+    state.hotspotTelefoneCount = payload.hotspotTelefoneCount ?? state.hotspotTelefones.length;
+    state.hotspotDiaCount = payload.hotspotDiaCount ?? state.hotspotTelefones.length;
     renderAll();
   } catch (error) {
     window.location.href = "/login";
@@ -294,7 +298,8 @@ async function refreshHotspotTelefones() {
     const queryString = getHotspotDateQueryString();
     const payload = await fetchJson(`/api/admin/hotspot/telefones${queryString ? `?${queryString}` : ""}`);
     state.hotspotTelefones = payload.items || [];
-    state.hotspotTelefoneCount = payload.total || state.hotspotTelefones.length;
+    state.hotspotTelefoneCount = payload.overallTotal ?? state.hotspotTelefoneCount;
+    state.hotspotDiaCount = payload.total ?? state.hotspotTelefones.length;
     renderStats();
     renderHotspotPhonesTable();
   } catch (error) {
