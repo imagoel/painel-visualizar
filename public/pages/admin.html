@@ -67,7 +67,15 @@
               <h3>Telefones capturados</h3>
             </div>
 
-            <a class="primary-link-button" href="/api/admin/hotspot/telefones.csv">Exportar planilha</a>
+            <div class="hotspot-export-actions">
+              <label>
+                Dia da captura
+                <input id="hotspotDateFilter" type="date" />
+              </label>
+              <a id="exportHotspotXlsx" class="primary-link-button" href="/api/admin/hotspot/telefones.xlsx">
+                Exportar planilha
+              </a>
+            </div>
           </div>
 
           <div class="table-wrap hotspot-table-wrap">

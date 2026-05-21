@@ -47,6 +47,7 @@ Recomendacao: altere as senhas iniciais apos subir o sistema em producao.
 - `/admin`: area administrativa
 - `/api/hotspot/telefones`: captura publica de telefones do hotspot
 - `/api/admin/hotspot/telefones.csv`: exportacao CSV dos telefones capturados
+- `/api/admin/hotspot/telefones.xlsx`: exportacao XLSX dos telefones capturados, com filtro opcional `?date=YYYY-MM-DD`
 
 ## Persistencia
 
@@ -64,4 +65,4 @@ Exemplo para liberar o painel antes da autenticacao no MikroTik:
 /ip hotspot walled-garden ip add action=accept protocol=tcp dst-address=10.75.2.4 dst-port=38520
 ```
 
-Depois do login administrativo, os telefones aparecem em `/admin` e podem ser baixados em CSV.
+Depois do login administrativo, os telefones aparecem em `/admin` e podem ser baixados em planilha XLSX. O filtro por dia usa a data da primeira captura do telefone para evitar duplicidade entre exportacoes diarias.

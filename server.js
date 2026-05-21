@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const bcrypt = require("bcryptjs");
 const session = require("express-session");
 const SQLiteStoreFactory = require("better-sqlite3-session-store");
+const ExcelJS = require("exceljs");
 const { createDatabase, slugify, mapUser } = require("./src/database");
 
 const app = express();
@@ -177,6 +178,42 @@ function csvEscape(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
+function formatSqlUtcDateTime(date) {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
+function getHotspotDateFilter(value) {
+  const date = String(value || "").trim();
+  if (!date) return null;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return null;
+  }
+
+  const [year, month, day] = date.split("-");
+  const start = new Date(`${date}T00:00:00-03:00`);
+  if (Number.isNaN(start.getTime())) {
+    return null;
+  }
+
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return {
+    date,
+    label: `${day}/${month}/${year}`,
+    startUtc: formatSqlUtcDateTime(start),
+    endUtc: formatSqlUtcDateTime(end),
+  };
+}
+
+function listHotspotExportItems(date) {
+  const filter = getHotspotDateFilter(date);
+  const items = filter
+    ? database.listHotspotTelefonesByFirstSeenRange(filter.startUtc, filter.endUtc, 1000000)
+    : database.listHotspotTelefones(1000000);
+
+  return { filter, items };
+}
+
 function saveHotspotTelefoneFromRequest(req, res) {
   const payload = normalizeHotspotTelefonePayload(req);
 
@@ -202,6 +239,87 @@ function formatCsvDateTime(value) {
     minute: "2-digit",
     second: "2-digit",
   });
+}
+
+async function buildHotspotWorkbook(items, filter) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Painel Visualizar";
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet("Telefones hotspot", {
+    views: [{ state: "frozen", ySplit: 3 }],
+  });
+
+  worksheet.columns = [
+    { header: "Telefone", key: "telefone", width: 18 },
+    { header: "MAC", key: "mac", width: 22 },
+    { header: "IP", key: "ip", width: 16 },
+    { header: "Origem", key: "origem", width: 22 },
+    { header: "Acessos", key: "totalAcessos", width: 10 },
+    { header: "Primeira captura", key: "firstSeenAt", width: 22 },
+    { header: "Ultimo registro", key: "lastSeenAt", width: 22 },
+    { header: "Versao do celular", key: "deviceVersion", width: 48 },
+  ];
+
+  worksheet.spliceRows(1, 0, ["Telefones capturados no hotspot"]);
+  worksheet.spliceRows(2, 0, [
+    filter ? `Filtro: primeira captura em ${filter.label}` : "Filtro: todos os registros",
+  ]);
+  worksheet.mergeCells("A1:H1");
+  worksheet.mergeCells("A2:H2");
+
+  worksheet.getCell("A1").font = { bold: true, size: 16, color: { argb: "FFFFFFFF" } };
+  worksheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF155A7E" } };
+  worksheet.getCell("A1").alignment = { vertical: "middle" };
+  worksheet.getRow(1).height = 26;
+
+  worksheet.getCell("A2").font = { italic: true, color: { argb: "FF526071" } };
+  worksheet.getCell("A2").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF5FA" } };
+
+  const headerRow = worksheet.getRow(3);
+  headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFA5264C" } };
+  headerRow.alignment = { vertical: "middle" };
+  headerRow.height = 22;
+
+  items.forEach((item) => {
+    worksheet.addRow({
+      telefone: item.telefone,
+      mac: item.mac,
+      ip: item.ip,
+      origem: item.origem,
+      totalAcessos: item.totalAcessos,
+      firstSeenAt: formatCsvDateTime(item.firstSeenAt),
+      lastSeenAt: formatCsvDateTime(item.lastSeenAt),
+      deviceVersion: parseDeviceVersion(item.userAgent),
+    });
+  });
+
+  worksheet.autoFilter = {
+    from: { row: 3, column: 1 },
+    to: { row: 3, column: 8 },
+  };
+
+  worksheet.eachRow((row, rowNumber) => {
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFE2E8F0" } },
+        left: { style: "thin", color: { argb: "FFE2E8F0" } },
+        bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+        right: { style: "thin", color: { argb: "FFE2E8F0" } },
+      };
+      cell.alignment = {
+        vertical: "middle",
+        wrapText: rowNumber > 3,
+      };
+    });
+  });
+
+  worksheet.getColumn("telefone").numFmt = "@";
+  worksheet.getColumn("mac").numFmt = "@";
+  worksheet.getColumn("ip").numFmt = "@";
+
+  return workbook.xlsx.writeBuffer();
 }
 
 function parseDeviceVersion(userAgent) {
@@ -450,16 +568,24 @@ app.get("/api/admin/hotspot/telefones", requireAdmin, (req, res) => {
 });
 
 app.get("/api/admin/hotspot/telefones.csv", requireAdmin, (req, res) => {
-  const items = database.listHotspotTelefones(100000);
+  const { items } = listHotspotExportItems(req.query.date);
   const header = [
     "numero do telefone",
     "mac",
+    "ip",
+    "origem",
+    "acessos",
+    "primeira captura",
     "data/horario de acesso",
     "versao do celular",
   ];
   const rows = items.map((item) => [
     item.telefone,
     item.mac,
+    item.ip,
+    item.origem,
+    item.totalAcessos,
+    formatCsvDateTime(item.firstSeenAt),
     formatCsvDateTime(item.lastSeenAt),
     parseDeviceVersion(item.userAgent),
   ]);
@@ -469,6 +595,21 @@ app.get("/api/admin/hotspot/telefones.csv", requireAdmin, (req, res) => {
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", "attachment; filename=telefones-hotspot.csv");
   return res.send(`\uFEFF${csv}\r\n`);
+});
+
+app.get("/api/admin/hotspot/telefones.xlsx", requireAdmin, async (req, res) => {
+  try {
+    const { filter, items } = listHotspotExportItems(req.query.date);
+    const buffer = await buildHotspotWorkbook(items, filter);
+    const suffix = filter ? filter.date : "todos";
+
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=telefones-hotspot-${suffix}.xlsx`);
+    return res.send(Buffer.from(buffer));
+  } catch (error) {
+    return res.status(400).json({ message: "Nao foi possivel exportar a planilha." });
+  }
 });
 
 app.post("/api/admin/secretarias", requireAdmin, (req, res) => {

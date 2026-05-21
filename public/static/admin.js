@@ -8,6 +8,8 @@ const secretariasTable = document.getElementById("secretariasTable");
 const systemsTable = document.getElementById("systemsTable");
 const usersTable = document.getElementById("usersTable");
 const hotspotPhonesTable = document.getElementById("hotspotPhonesTable");
+const hotspotDateFilter = document.getElementById("hotspotDateFilter");
+const exportHotspotXlsx = document.getElementById("exportHotspotXlsx");
 const permissionSecretariaSelect = document.getElementById("permissionSecretariaSelect");
 const permissionsGrid = document.getElementById("permissionsGrid");
 const newUserSecretaria = document.getElementById("newUserSecretaria");
@@ -69,6 +71,23 @@ function findAssignments(secretariaId) {
 function setMessage(text, isError = false) {
   adminMessage.textContent = text;
   adminMessage.style.color = isError ? "#a5264c" : "#0f5d8f";
+}
+
+function getTodayInputValue() {
+  const today = new Date();
+  const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 10);
+}
+
+function updateHotspotExportLink() {
+  if (!exportHotspotXlsx) return;
+
+  const params = new URLSearchParams();
+  if (hotspotDateFilter && hotspotDateFilter.value) {
+    params.set("date", hotspotDateFilter.value);
+  }
+
+  exportHotspotXlsx.href = `/api/admin/hotspot/telefones.xlsx${params.toString() ? `?${params}` : ""}`;
 }
 
 function formatDateTime(value) {
@@ -476,5 +495,11 @@ logoutButton.addEventListener("click", async () => {
   await fetchJson("/api/auth/logout", { method: "POST" }).catch(() => null);
   window.location.href = "/login";
 });
+
+if (hotspotDateFilter) {
+  hotspotDateFilter.value = getTodayInputValue();
+  hotspotDateFilter.addEventListener("input", updateHotspotExportLink);
+  updateHotspotExportLink();
+}
 
 bootstrap();

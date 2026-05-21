@@ -272,6 +272,14 @@ function createDatabase(filePath) {
       ORDER BY last_seen_at DESC, id DESC
       LIMIT ?
     `),
+    hotspotTelefonesByFirstSeenRange: db.prepare(`
+      SELECT *
+      FROM hotspot_telefones
+      WHERE first_seen_at >= ?
+        AND first_seen_at < ?
+      ORDER BY first_seen_at ASC, id ASC
+      LIMIT ?
+    `),
     hotspotTelefoneCount: db.prepare(`
       SELECT COUNT(*) AS total
       FROM hotspot_telefones
@@ -458,6 +466,19 @@ function createDatabase(filePath) {
     },
     listHotspotTelefones(limit = 1000) {
       return statements.allHotspotTelefones.all(Number(limit) || 1000).map((item) => ({
+        id: item.id,
+        telefone: item.telefone,
+        mac: item.mac,
+        ip: item.ip,
+        origem: item.origem,
+        userAgent: item.user_agent,
+        totalAcessos: item.total_acessos,
+        firstSeenAt: item.first_seen_at,
+        lastSeenAt: item.last_seen_at,
+      }));
+    },
+    listHotspotTelefonesByFirstSeenRange(startUtc, endUtc, limit = 1000000) {
+      return statements.hotspotTelefonesByFirstSeenRange.all(startUtc, endUtc, Number(limit) || 1000000).map((item) => ({
         id: item.id,
         telefone: item.telefone,
         mac: item.mac,

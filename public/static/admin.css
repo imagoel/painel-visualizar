@@ -230,6 +230,24 @@ body {
   min-width: 220px;
 }
 
+.hotspot-export-actions {
+  display: flex;
+  align-items: end;
+  gap: 0.7rem;
+}
+
+.hotspot-export-actions label {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.hotspot-export-actions input {
+  min-width: 170px;
+}
+
 .stack-form {
   display: grid;
   gap: 0.65rem;
@@ -404,6 +422,12 @@ td select {
   .admin-sidebar-actions {
     margin-top: 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card-header.split,
+  .hotspot-export-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .users-form,
