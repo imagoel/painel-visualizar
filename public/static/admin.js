@@ -96,7 +96,7 @@ function renderSecretariaOptions() {
     .join("");
 
   permissionSecretariaSelect.innerHTML = options;
-  newUserSecretaria.innerHTML = `<option value="">Sem secretaria</option>${options}`;
+  newUserSecretaria.innerHTML = `<option value="">Sem setor</option>${options}`;
 
   if (!state.selectedSecretariaId && state.secretarias[0]) {
     state.selectedSecretariaId = state.secretarias[0].id;
@@ -112,14 +112,9 @@ function renderSecretariasTable() {
     .map(
       (secretaria) => `
         <tr data-id="${secretaria.id}">
-          <td><input data-field="name" type="text" value="${escapeHtml(secretaria.name)}" /></td>
           <td>
-            <input
-              data-field="slug"
-              type="text"
-              placeholder="Identificador"
-              value="${escapeHtml(secretaria.slug)}"
-            />
+            <input data-field="name" type="text" value="${escapeHtml(secretaria.name)}" />
+            <input data-field="slug" type="hidden" value="${escapeHtml(secretaria.slug)}" />
           </td>
           <td><input data-field="isActive" type="checkbox" ${secretaria.isActive ? "checked" : ""} /></td>
           <td class="row-save"><button type="button" data-action="save-secretaria">Salvar</button></td>
@@ -136,17 +131,10 @@ function renderSystemsTable() {
         <tr data-id="${system.id}">
           <td>
             <input data-field="name" type="text" value="${escapeHtml(system.name)}" />
-            <input
-              data-field="slug"
-              type="text"
-              placeholder="Identificador"
-              value="${escapeHtml(system.slug)}"
-            />
+            <input data-field="slug" type="hidden" value="${escapeHtml(system.slug)}" />
           </td>
-          <td>
-            <input data-field="url" type="url" value="${escapeHtml(system.url)}" />
-            <input data-field="description" type="text" value="${escapeHtml(system.description || "")}" />
-          </td>
+          <td><input data-field="url" type="url" value="${escapeHtml(system.url)}" /></td>
+          <td><input data-field="description" type="text" value="${escapeHtml(system.description || "")}" /></td>
           <td><input data-field="position" type="number" min="1" value="${system.position}" /></td>
           <td><input data-field="isActive" type="checkbox" ${system.isActive ? "checked" : ""} /></td>
           <td class="row-save"><button type="button" data-action="save-system">Salvar</button></td>
@@ -157,7 +145,7 @@ function renderSystemsTable() {
 }
 
 function renderUsersTable() {
-  const secretariaOptions = [`<option value="">Sem secretaria</option>`]
+  const secretariaOptions = [`<option value="">Sem setor</option>`]
     .concat(state.secretarias.map((secretaria) => `<option value="${secretaria.id}">${escapeHtml(secretaria.name)}</option>`))
     .join("");
 
@@ -169,7 +157,7 @@ function renderUsersTable() {
           <td><input data-field="email" type="email" value="${escapeHtml(user.email)}" /></td>
           <td>
             <select data-field="role">
-              <option value="secretaria" ${user.role === "secretaria" ? "selected" : ""}>Secretaria</option>
+              <option value="secretaria" ${user.role === "secretaria" ? "selected" : ""}>Setor</option>
               <option value="admin" ${user.role === "admin" ? "selected" : ""}>Admin</option>
             </select>
           </td>
@@ -287,7 +275,7 @@ createSecretariaForm.addEventListener("submit", async (event) => {
     });
 
     createSecretariaForm.reset();
-    setMessage("Secretaria criada com sucesso.");
+    setMessage("Setor criado com sucesso.");
     await bootstrap();
   } catch (error) {
     setMessage(error.message, true);
@@ -359,7 +347,7 @@ secretariasTable.addEventListener("click", async (event) => {
       }),
     });
 
-    setMessage("Secretaria atualizada com sucesso.");
+    setMessage("Setor atualizado com sucesso.");
     await bootstrap();
   } catch (error) {
     setMessage(error.message, true);

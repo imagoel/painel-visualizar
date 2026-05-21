@@ -240,6 +240,16 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.systems-form {
+  grid-template-columns: minmax(170px, 1fr) minmax(220px, 1.35fr) 96px;
+  align-items: center;
+}
+
+.systems-form input[name="description"],
+.systems-form .primary-button {
+  grid-column: 1 / -1;
+}
+
 input,
 select {
   width: 100%;
@@ -282,6 +292,18 @@ th {
 td input,
 td select {
   min-width: 100px;
+}
+
+#systemsTable input[data-field="url"] {
+  min-width: 230px;
+}
+
+#systemsTable input[data-field="description"] {
+  min-width: 180px;
+}
+
+#systemsTable input[data-field="position"] {
+  min-width: 78px;
 }
 
 .row-save {
@@ -346,6 +368,11 @@ td select {
 }
 
 @media (min-width: 1181px) {
+  .systems-form input[name="position"] {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
   .table-wrap {
     max-height: 340px;
   }
@@ -366,6 +393,7 @@ td select {
   }
 
   .users-form,
+  .systems-form,
   .admin-grid,
   .permissions-grid,
   .stats-grid {

@@ -13,7 +13,7 @@
         <div class="admin-sidebar-copy">
           <p class="eyebrow">Controle central</p>
           <h1>Painel de acessos</h1>
-          <p>Cadastre usuarios, secretarias, sistemas e defina quem pode visualizar cada painel.</p>
+          <p>Cadastre usuarios, setores, sistemas e defina quem pode visualizar cada painel.</p>
         </div>
 
         <div class="admin-sidebar-actions">
@@ -43,7 +43,7 @@
 
         <section class="stats-grid">
           <article class="stat-card">
-            <span>Secretarias</span>
+            <span>Setores</span>
             <strong id="secretariaCount">0</strong>
           </article>
           <article class="stat-card">
@@ -91,14 +91,13 @@
             <div class="card-header">
               <div>
                 <p class="eyebrow">Cadastro</p>
-                <h3>Nova secretaria</h3>
+                <h3>Novo setor</h3>
               </div>
             </div>
 
             <form id="createSecretariaForm" class="stack-form">
-              <input name="name" type="text" placeholder="Nome da secretaria" required />
-              <input name="slug" type="text" placeholder="Identificador interno opcional" />
-              <button type="submit" class="primary-button">Criar secretaria</button>
+              <input name="name" type="text" placeholder="Nome do setor" required />
+              <button type="submit" class="primary-button">Criar setor</button>
             </form>
 
             <div class="table-wrap">
@@ -106,8 +105,7 @@
                 <thead>
                   <tr>
                     <th>Nome</th>
-                    <th>Identificador</th>
-                    <th>Ativa</th>
+                    <th>Ativo</th>
                     <th>Salvar</th>
                   </tr>
                 </thead>
@@ -124,9 +122,8 @@
               </div>
             </div>
 
-            <form id="createSystemForm" class="stack-form">
+            <form id="createSystemForm" class="stack-form systems-form">
               <input name="name" type="text" placeholder="Nome do sistema" required />
-              <input name="slug" type="text" placeholder="Identificador interno opcional" />
               <input name="url" type="url" placeholder="https://link-do-sistema" />
               <input name="description" type="text" placeholder="Descricao curta" />
               <input name="position" type="number" min="1" value="1" placeholder="Posicao" />
@@ -138,7 +135,8 @@
                 <thead>
                   <tr>
                     <th>Nome</th>
-                    <th>URL</th>
+                    <th>Link</th>
+                    <th>Descricao</th>
                     <th>Ordem</th>
                     <th>Ativo</th>
                     <th>Salvar</th>
@@ -164,7 +162,7 @@
               <input name="email" type="email" placeholder="email@amargosa.ba.gov.br" required />
               <input name="password" type="password" placeholder="Senha inicial" required />
               <select name="role" required>
-                <option value="secretaria">Usuario de secretaria</option>
+                <option value="secretaria">Usuario de setor</option>
                 <option value="admin">Administrador</option>
               </select>
               <select name="secretariaId" id="newUserSecretaria"></select>
@@ -178,7 +176,7 @@
                     <th>Nome</th>
                     <th>E-mail</th>
                     <th>Perfil</th>
-                    <th>Secretaria</th>
+                    <th>Setor</th>
                     <th>Nova senha</th>
                     <th>Ativo</th>
                     <th>Salvar</th>
@@ -194,7 +192,7 @@
           <div class="card-header split">
             <div>
               <p class="eyebrow">Permissoes</p>
-              <h3>Sistemas por secretaria</h3>
+              <h3>Sistemas por setor</h3>
             </div>
 
             <select id="permissionSecretariaSelect"></select>
