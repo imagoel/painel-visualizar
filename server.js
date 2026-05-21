@@ -146,13 +146,7 @@ function normalizeUserPayload(body) {
 }
 
 function normalizeTelefone(value) {
-  const digits = String(value || "").replace(/\D/g, "");
-
-  if (digits.length > 11 && digits.startsWith("55")) {
-    return digits.slice(2).slice(-11);
-  }
-
-  return digits.slice(-11);
+  return String(value || "").replace(/\D/g, "");
 }
 
 function normalizeHotspotTelefonePayload(req) {
