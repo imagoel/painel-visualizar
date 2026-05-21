@@ -3,6 +3,7 @@ const dotsEl = document.getElementById("dots");
 const progressEl = document.getElementById("progress");
 const logoutButton = document.getElementById("logoutButton");
 const editViewButton = document.getElementById("editViewButton");
+const adminButton = document.getElementById("adminButton");
 const controlsRevealZone = document.getElementById("controlsRevealZone");
 const visualizationModal = document.getElementById("visualizationModal");
 const visualizationOptions = document.getElementById("visualizationOptions");
@@ -494,6 +495,10 @@ async function bootstrap() {
     state.slideDuration = panelData.settings.slideDuration;
     state.inactivityTimeout = panelData.settings.inactivityTimeout;
 
+    if (state.user.role === "admin") {
+      adminButton.classList.remove("is-hidden");
+    }
+
     renderSystems();
     showSlide(0);
     startSlideshow();
@@ -512,6 +517,10 @@ logoutButton.addEventListener("click", async () => {
 
 editViewButton.addEventListener("click", () => {
   openVisualizationModal();
+});
+
+adminButton.addEventListener("click", () => {
+  window.location.href = "/admin";
 });
 
 closeVisualizationButton.addEventListener("click", () => {
