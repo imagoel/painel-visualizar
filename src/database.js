@@ -341,6 +341,8 @@ function createDatabase(filePath) {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `),
+    deleteSystemAssignments: db.prepare("DELETE FROM secretaria_systems WHERE system_id = ?"),
+    deleteSystem: db.prepare("DELETE FROM systems WHERE id = ?"),
     insertUser: db.prepare(`
       INSERT INTO users (name, email, password_hash, role, secretaria_id, is_active, updated_at)
       VALUES (@name, @email, @password_hash, @role, @secretaria_id, @is_active, CURRENT_TIMESTAMP)
@@ -390,6 +392,11 @@ function createDatabase(filePath) {
     items.forEach((item) => {
       statements.insertAssignment.run(secretariaId, item.systemId, item.displayOrder);
     });
+  });
+
+  const deleteSystem = db.transaction((id) => {
+    statements.deleteSystemAssignments.run(id);
+    return statements.deleteSystem.run(id).changes;
   });
 
   return {
@@ -559,6 +566,9 @@ function createDatabase(filePath) {
     deactivateSystem(id) {
       statements.deactivateSystem.run(id);
       return this.getSystemById(id);
+    },
+    deleteSystem(id) {
+      return deleteSystem(id) > 0;
     },
     createUser(payload) {
       const result = statements.insertUser.run({

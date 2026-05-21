@@ -137,7 +137,10 @@ function renderSystemsTable() {
           <td><input data-field="description" type="text" value="${escapeHtml(system.description || "")}" /></td>
           <td><input data-field="position" type="number" min="1" value="${system.position}" /></td>
           <td><input data-field="isActive" type="checkbox" ${system.isActive ? "checked" : ""} /></td>
-          <td class="row-save"><button type="button" data-action="save-system">Salvar</button></td>
+          <td class="row-actions">
+            <button type="button" data-action="save-system">Salvar</button>
+            <button type="button" class="danger-button" data-action="delete-system">Excluir</button>
+          </td>
         </tr>
       `
     )
@@ -355,11 +358,36 @@ secretariasTable.addEventListener("click", async (event) => {
 });
 
 systemsTable.addEventListener("click", async (event) => {
-  const button = event.target.closest('button[data-action="save-system"]');
+  const button = event.target.closest("button[data-action]");
   if (!button) return;
 
   const row = button.closest("tr");
   const id = Number(row.dataset.id);
+  const action = button.dataset.action;
+  const name = row.querySelector('[data-field="name"]').value || "este sistema";
+
+  if (action === "delete-system") {
+    const shouldDelete = window.confirm(
+      `Excluir "${name}"? O sistema tambem sera removido dos acessos dos setores.`
+    );
+
+    if (!shouldDelete) return;
+
+    try {
+      await fetchJson(`/api/admin/systems/${id}`, {
+        method: "DELETE",
+      });
+
+      setMessage("Sistema excluido com sucesso.");
+      await bootstrap();
+    } catch (error) {
+      setMessage(error.message, true);
+    }
+
+    return;
+  }
+
+  if (action !== "save-system") return;
 
   try {
     await fetchJson(`/api/admin/systems/${id}`, {

@@ -535,6 +535,24 @@ app.put("/api/admin/systems/:id", requireAdmin, (req, res) => {
   }
 });
 
+app.delete("/api/admin/systems/:id", requireAdmin, (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Sistema invalido." });
+    }
+
+    const removed = database.deleteSystem(id);
+    if (!removed) {
+      return res.status(404).json({ message: "Sistema nao encontrado." });
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(400).json({ message: "Nao foi possivel excluir o sistema." });
+  }
+});
+
 app.post("/api/admin/users", requireAdmin, (req, res) => {
   try {
     const payload = normalizeUserPayload(req.body);

@@ -310,7 +310,16 @@ td select {
   white-space: nowrap;
 }
 
-.row-save button {
+.row-actions {
+  white-space: nowrap;
+}
+
+.row-actions button + button {
+  margin-left: 0.45rem;
+}
+
+.row-save button,
+.row-actions button {
   border: 0;
   border-radius: 10px;
   padding: 0.58rem 0.8rem;
@@ -318,6 +327,11 @@ td select {
   background: rgba(15, 93, 143, 0.1);
   color: var(--accent-2);
   cursor: pointer;
+}
+
+.row-actions .danger-button {
+  background: rgba(165, 38, 76, 0.1);
+  color: var(--accent);
 }
 
 .empty-state {
