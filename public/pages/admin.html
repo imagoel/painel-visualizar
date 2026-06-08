@@ -134,9 +134,9 @@
               </div>
             </div>
 
-            <form id="createSystemForm" class="stack-form systems-form">
-              <input name="name" type="text" placeholder="Nome do sistema" required />
-              <input name="url" type="url" placeholder="https://link-do-sistema" />
+            <form id="createSystemForm" class="stack-form systems-form" novalidate>
+              <input name="name" type="text" placeholder="Nome do sistema ou banner" required />
+              <input name="url" type="text" placeholder="Link opcional do sistema" />
               <input name="description" type="text" placeholder="Descricao curta" />
               <input name="media" type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" />
               <input name="position" type="number" min="1" value="1" placeholder="Posicao" />

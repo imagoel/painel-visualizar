@@ -84,6 +84,17 @@ function readMediaFile(file) {
   });
 }
 
+function isValidOptionalUrl(url) {
+  if (!url) return true;
+
+  try {
+    const parsedUrl = new URL(url);
+    return ["http:", "https:"].includes(parsedUrl.protocol);
+  } catch (error) {
+    return false;
+  }
+}
+
 function requestFullscreen() {
   const element = document.documentElement;
   const fn =
@@ -153,8 +164,8 @@ function renderVisualizationOptions() {
             aria-label="Exibir ${escapeHtml(system.name)}"
           />
           <div class="visualization-option-fields">
-            <input data-field="name" type="text" value="${escapeHtml(system.name)}" placeholder="Nome do sistema" />
-            <input data-field="url" type="url" value="${escapeHtml(system.url)}" placeholder="https://link-do-sistema" />
+            <input data-field="name" type="text" value="${escapeHtml(system.name)}" placeholder="Nome do sistema ou banner" />
+            <input data-field="url" type="text" value="${escapeHtml(system.url)}" placeholder="Link opcional do sistema" />
             <input
               data-field="description"
               type="text"
@@ -377,6 +388,10 @@ async function saveEditedSystems() {
       throw new Error("Preencha nome e link ou selecione uma midia.");
     }
 
+    if (!isValidOptionalUrl(url)) {
+      throw new Error("Use um link iniciado com http ou https.");
+    }
+
     const changed =
       name !== original.name ||
       url !== original.url ||
@@ -487,6 +502,15 @@ async function addSystem(event) {
 
   try {
     const mediaData = await readMediaFile(formData.get("media"));
+
+    if (!name || (!url && !mediaData)) {
+      throw new Error("Preencha nome e link ou selecione uma midia.");
+    }
+
+    if (!isValidOptionalUrl(url)) {
+      throw new Error("Use um link iniciado com http ou https.");
+    }
+
     const payload = await fetchJson("/api/panel/systems", {
       method: "POST",
       body: JSON.stringify({ name, url, mediaData }),

@@ -61,6 +61,17 @@ function readMediaFile(file) {
   });
 }
 
+function isValidOptionalUrl(url) {
+  if (!url) return true;
+
+  try {
+    const parsedUrl = new URL(url);
+    return ["http:", "https:"].includes(parsedUrl.protocol);
+  } catch (error) {
+    return false;
+  }
+}
+
 function fetchJson(url, options = {}) {
   return fetch(url, {
     credentials: "same-origin",
@@ -179,7 +190,7 @@ function renderSystemsTable() {
             <input data-field="name" type="text" value="${escapeHtml(system.name)}" />
             <input data-field="slug" type="hidden" value="${escapeHtml(system.slug)}" />
           </td>
-          <td><input data-field="url" type="url" value="${escapeHtml(system.url)}" /></td>
+          <td><input data-field="url" type="text" value="${escapeHtml(system.url)}" placeholder="Link opcional" /></td>
           <td>
             ${
               system.mediaUrl
@@ -373,12 +384,23 @@ createSystemForm.addEventListener("submit", async (event) => {
 
   try {
     const mediaData = await readMediaFile(formData.get("media"));
+    const name = String(formData.get("name") || "").trim();
+    const url = String(formData.get("url") || "").trim();
+
+    if (!name || (!url && !mediaData)) {
+      throw new Error("Preencha nome e link ou selecione uma midia.");
+    }
+
+    if (!isValidOptionalUrl(url)) {
+      throw new Error("Use um link iniciado com http ou https.");
+    }
+
     await fetchJson("/api/admin/systems", {
       method: "POST",
       body: JSON.stringify({
-        name: formData.get("name"),
+        name,
         slug: formData.get("slug"),
-        url: formData.get("url"),
+        url,
         description: formData.get("description"),
         mediaData,
         position: Number(formData.get("position") || 1),
@@ -475,12 +497,19 @@ systemsTable.addEventListener("click", async (event) => {
 
   try {
     const mediaData = await readMediaFile(row.querySelector('[data-field="media"]').files[0]);
+    const name = row.querySelector('[data-field="name"]').value.trim();
+    const url = row.querySelector('[data-field="url"]').value.trim();
+
+    if (!isValidOptionalUrl(url)) {
+      throw new Error("Use um link iniciado com http ou https.");
+    }
+
     await fetchJson(`/api/admin/systems/${id}`, {
       method: "PUT",
       body: JSON.stringify({
-        name: row.querySelector('[data-field="name"]').value,
+        name,
         slug: row.querySelector('[data-field="slug"]').value,
-        url: row.querySelector('[data-field="url"]').value,
+        url,
         description: row.querySelector('[data-field="description"]').value,
         mediaData,
         removeMedia: Boolean(row.querySelector('[data-field="removeMedia"]')?.checked),
