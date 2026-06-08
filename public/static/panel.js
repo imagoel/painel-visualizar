@@ -65,6 +65,25 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function readMediaFile(file) {
+  if (!file) return Promise.resolve("");
+
+  if (!/^(image\/(png|jpeg|webp|gif)|video\/(mp4|webm))$/.test(file.type)) {
+    return Promise.reject(new Error("Use PNG, JPG, WEBP, GIF, MP4 ou WEBM."));
+  }
+
+  if (file.size > 20 * 1024 * 1024) {
+    return Promise.reject(new Error("Use uma midia de ate 20 MB."));
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result || "")));
+    reader.addEventListener("error", () => reject(new Error("Nao foi possivel ler a midia.")));
+    reader.readAsDataURL(file);
+  });
+}
+
 function requestFullscreen() {
   const element = document.documentElement;
   const fn =
@@ -142,6 +161,24 @@ function renderVisualizationOptions() {
               value="${escapeHtml(system.description || "")}"
               placeholder="Descricao opcional"
             />
+            ${
+              system.mediaUrl
+                ? String(system.mediaType || "").startsWith("video/")
+                  ? `<video class="image-preview" src="${escapeHtml(system.mediaUrl)}" muted loop playsinline></video>`
+                  : `<img class="image-preview" src="${escapeHtml(system.mediaUrl)}" alt="${escapeHtml(system.name)}" />`
+                : ""
+            }
+            <input data-field="media" type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" />
+            ${
+              system.mediaUrl
+                ? `
+                  <label class="image-remove-label">
+                    <input data-field="removeMedia" type="checkbox" />
+                    Remover midia atual
+                  </label>
+                `
+                : ""
+            }
           </div>
           <button
             class="remove-system-button"
@@ -178,14 +215,31 @@ function renderSystems() {
     const tile = document.createElement("section");
     tile.className = "tv-tile";
 
-    if (system.url) {
+    if (system.mediaUrl) {
+      if (String(system.mediaType || "").startsWith("video/")) {
+        const video = document.createElement("video");
+        video.src = system.mediaUrl;
+        video.className = "tv-media";
+        video.muted = true;
+        video.loop = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        tile.appendChild(video);
+      } else {
+        const image = document.createElement("img");
+        image.src = system.mediaUrl;
+        image.alt = system.name;
+        image.className = "tv-image";
+        tile.appendChild(image);
+      }
+    } else if (system.url) {
       const iframe = document.createElement("iframe");
       iframe.src = system.url;
       iframe.title = system.name;
       iframe.loading = "lazy";
       tile.appendChild(iframe);
     } else {
-      tile.appendChild(createPlaceholder(system.name, system.description || "Link ainda nao configurado."));
+      tile.appendChild(createPlaceholder(system.name, system.description || "Link ou midia ainda nao configurado."));
     }
 
     stage.appendChild(tile);
@@ -314,23 +368,38 @@ async function saveEditedSystems() {
     const name = row.querySelector('[data-field="name"]').value.trim();
     const url = row.querySelector('[data-field="url"]').value.trim();
     const description = row.querySelector('[data-field="description"]').value.trim();
+    const mediaFile = row.querySelector('[data-field="media"]').files[0];
+    const removeMedia = Boolean(row.querySelector('[data-field="removeMedia"]')?.checked);
+    const mediaData = await readMediaFile(mediaFile);
+    const keepsMedia = Boolean(original.mediaUrl) && !removeMedia;
 
-    if (!name || !url) {
-      throw new Error("Preencha nome e link dos sistemas editados.");
+    if (!name || (!url && !mediaData && !keepsMedia)) {
+      throw new Error("Preencha nome e link ou selecione uma midia.");
     }
 
     const changed =
       name !== original.name ||
       url !== original.url ||
-      description !== (original.description || "");
+      description !== (original.description || "") ||
+      Boolean(mediaData) ||
+      removeMedia;
 
     if (!changed) continue;
 
     await fetchJson(`/api/panel/systems/${id}`, {
       method: "PUT",
-      body: JSON.stringify({ name, url, description }),
+      body: JSON.stringify({ name, url, description, mediaData, removeMedia }),
     });
   }
+}
+
+async function saveVisualizationSelection(selectedIds) {
+  if (!state.user || !state.user.secretariaId) return;
+
+  await fetchJson("/api/panel/systems/selection", {
+    method: "PUT",
+    body: JSON.stringify({ systemIds: selectedIds }),
+  });
 }
 
 async function refreshPanelSystems() {
@@ -357,6 +426,7 @@ async function applyVisualization() {
     applyVisualizationButton.disabled = true;
     visualizationMessage.textContent = "";
     await saveEditedSystems();
+    await saveVisualizationSelection(checkedIds);
     await refreshPanelSystems();
 
     syncSelectedSystemsAfterRefresh(checkedIds);
@@ -416,9 +486,10 @@ async function addSystem(event) {
   const checkedIds = getCheckedVisualizationIds();
 
   try {
+    const mediaData = await readMediaFile(formData.get("media"));
     const payload = await fetchJson("/api/panel/systems", {
       method: "POST",
-      body: JSON.stringify({ name, url }),
+      body: JSON.stringify({ name, url, mediaData }),
     });
 
     state.availableSystems = payload.systems;

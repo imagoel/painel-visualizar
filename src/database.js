@@ -46,6 +46,32 @@ function boolToInt(value) {
   return value ? 1 : 0;
 }
 
+function getMediaType(item) {
+  if (item.media_type) return item.media_type;
+  if (!item.image_path) return "";
+  if (item.image_path.endsWith(".mp4")) return "video/mp4";
+  if (item.image_path.endsWith(".webm")) return "video/webm";
+  return "image";
+}
+
+function mapSystem(item, position = item.position) {
+  const mediaType = getMediaType(item);
+
+  return {
+    id: item.id,
+    name: item.name,
+    slug: item.slug,
+    description: item.description,
+    url: item.url,
+    imagePath: item.image_path || "",
+    imageUrl: item.image_path ? `/uploads/${item.image_path}` : "",
+    mediaUrl: item.image_path ? `/uploads/${item.image_path}` : "",
+    mediaType,
+    position,
+    isActive: Boolean(item.is_active),
+  };
+}
+
 function mapUser(row) {
   if (!row) return null;
 
@@ -77,6 +103,8 @@ function ensureSchema(db) {
       slug TEXT NOT NULL UNIQUE,
       description TEXT NOT NULL DEFAULT '',
       url TEXT NOT NULL DEFAULT '',
+      image_path TEXT NOT NULL DEFAULT '',
+      media_type TEXT NOT NULL DEFAULT '',
       position INTEGER NOT NULL DEFAULT 1,
       is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -120,6 +148,17 @@ function ensureSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_hotspot_telefones_last_seen
       ON hotspot_telefones (last_seen_at DESC);
   `);
+
+  const systemColumns = db.prepare("PRAGMA table_info(systems)").all();
+  const hasImagePath = systemColumns.some((column) => column.name === "image_path");
+  if (!hasImagePath) {
+    db.exec("ALTER TABLE systems ADD COLUMN image_path TEXT NOT NULL DEFAULT ''");
+  }
+
+  const hasMediaType = systemColumns.some((column) => column.name === "media_type");
+  if (!hasMediaType) {
+    db.exec("ALTER TABLE systems ADD COLUMN media_type TEXT NOT NULL DEFAULT ''");
+  }
 }
 
 function seedIfNeeded(db) {
@@ -205,7 +244,9 @@ function createDatabase(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
   const db = new Database(filePath);
-  db.pragma("journal_mode = WAL");
+  if (!path.resolve(filePath).startsWith("\\\\")) {
+    db.pragma("journal_mode = WAL");
+  }
   db.pragma("foreign_keys = ON");
 
   ensureSchema(db);
@@ -277,12 +318,12 @@ function createDatabase(filePath) {
       FROM hotspot_telefones
       WHERE telefone = ?
     `),
-    hotspotTelefonesByFirstSeenRange: db.prepare(`
+    hotspotTelefonesByLastSeenRange: db.prepare(`
       SELECT *
       FROM hotspot_telefones
-      WHERE first_seen_at >= ?
-        AND first_seen_at < ?
-      ORDER BY first_seen_at ASC, id ASC
+      WHERE last_seen_at >= ?
+        AND last_seen_at < ?
+      ORDER BY last_seen_at ASC, id ASC
       LIMIT ?
     `),
     hotspotTelefoneCount: db.prepare(`
@@ -332,8 +373,8 @@ function createDatabase(filePath) {
       WHERE id = @id
     `),
     insertSystem: db.prepare(`
-      INSERT INTO systems (name, slug, description, url, position, is_active, updated_at)
-      VALUES (@name, @slug, @description, @url, @position, @is_active, CURRENT_TIMESTAMP)
+      INSERT INTO systems (name, slug, description, url, image_path, media_type, position, is_active, updated_at)
+      VALUES (@name, @slug, @description, @url, @image_path, @media_type, @position, @is_active, CURRENT_TIMESTAMP)
     `),
     updateSystem: db.prepare(`
       UPDATE systems
@@ -342,6 +383,8 @@ function createDatabase(filePath) {
         slug = @slug,
         description = @description,
         url = @url,
+        image_path = @image_path,
+        media_type = @media_type,
         position = @position,
         is_active = @is_active,
         updated_at = CURRENT_TIMESTAMP
@@ -433,29 +476,13 @@ function createDatabase(filePath) {
       }));
     },
     listSystems() {
-      return statements.allSystems.all().map((item) => ({
-        id: item.id,
-        name: item.name,
-        slug: item.slug,
-        description: item.description,
-        url: item.url,
-        position: item.position,
-        isActive: Boolean(item.is_active),
-      }));
+      return statements.allSystems.all().map((item) => mapSystem(item));
     },
     getSystemById(id) {
       const item = statements.systemById.get(id);
       if (!item) return null;
 
-      return {
-        id: item.id,
-        name: item.name,
-        slug: item.slug,
-        description: item.description,
-        url: item.url,
-        position: item.position,
-        isActive: Boolean(item.is_active),
-      };
+      return mapSystem(item);
     },
     listUsers() {
       return statements.allUsers.all().map((item) => ({
@@ -482,8 +509,8 @@ function createDatabase(filePath) {
         lastSeenAt: item.last_seen_at,
       }));
     },
-    listHotspotTelefonesByFirstSeenRange(startUtc, endUtc, limit = 1000000) {
-      return statements.hotspotTelefonesByFirstSeenRange.all(startUtc, endUtc, Number(limit) || 1000000).map((item) => ({
+    listHotspotTelefonesByLastSeenRange(startUtc, endUtc, limit = 1000000) {
+      return statements.hotspotTelefonesByLastSeenRange.all(startUtc, endUtc, Number(limit) || 1000000).map((item) => ({
         id: item.id,
         telefone: item.telefone,
         mac: item.mac,
@@ -525,21 +552,11 @@ function createDatabase(filePath) {
     getSystemsForUser(user) {
       if (!user) return [];
 
-      if (user.role === "admin") {
-        return this.listSystems().filter((item) => item.isActive);
+      if (!user.secretariaId) {
+        return user.role === "admin" ? this.listSystems().filter((item) => item.isActive) : [];
       }
 
-      if (!user.secretariaId) return [];
-
-      return statements.systemsForSecretaria.all(user.secretariaId).map((item) => ({
-        id: item.id,
-        name: item.name,
-        slug: item.slug,
-        description: item.description,
-        url: item.url,
-        position: item.display_order,
-        isActive: Boolean(item.is_active),
-      }));
+      return statements.systemsForSecretaria.all(user.secretariaId).map((item) => mapSystem(item, item.display_order));
     },
     createSecretaria(payload) {
       const result = statements.insertSecretaria.run({
@@ -566,6 +583,8 @@ function createDatabase(filePath) {
         slug: payload.slug,
         description: payload.description || "",
         url: payload.url || "",
+        image_path: payload.imagePath || "",
+        media_type: payload.mediaType || "",
         position: payload.position,
         is_active: boolToInt(payload.isActive),
       });
@@ -578,6 +597,8 @@ function createDatabase(filePath) {
         slug: payload.slug,
         description: payload.description || "",
         url: payload.url || "",
+        image_path: payload.imagePath || "",
+        media_type: payload.mediaType || "",
         position: payload.position,
         is_active: boolToInt(payload.isActive),
       });
@@ -596,6 +617,8 @@ function createDatabase(filePath) {
         slug: payload.slug,
         description: payload.description || "",
         url: payload.url || "",
+        image_path: payload.imagePath || "",
+        media_type: payload.mediaType || "",
         position: payload.position,
         is_active: boolToInt(payload.isActive),
       });

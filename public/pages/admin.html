@@ -36,7 +36,7 @@
         <header class="admin-header">
           <div>
             <p class="eyebrow">Administracao</p>
-            <h2>Gestao de usuarios e permissos</h2>
+            <h2>Gestao de usuarios e permissoes</h2>
           </div>
           <p id="adminWelcome" class="admin-welcome"></p>
         </header>
@@ -73,7 +73,7 @@
 
             <div class="hotspot-export-actions">
               <label>
-                Dia da captura
+                Dia do acesso
                 <input id="hotspotDateFilter" type="date" />
               </label>
               <a id="exportHotspotXlsx" class="primary-link-button" href="/api/admin/hotspot/telefones.xlsx">
@@ -130,7 +130,7 @@
             <div class="card-header">
               <div>
                 <p class="eyebrow">Cadastro</p>
-                <h3>Novo sistema</h3>
+                <h3>Novo sistema ou banner</h3>
               </div>
             </div>
 
@@ -138,6 +138,7 @@
               <input name="name" type="text" placeholder="Nome do sistema" required />
               <input name="url" type="url" placeholder="https://link-do-sistema" />
               <input name="description" type="text" placeholder="Descricao curta" />
+              <input name="media" type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" />
               <input name="position" type="number" min="1" value="1" placeholder="Posicao" />
               <button type="submit" class="primary-button">Criar sistema</button>
             </form>
@@ -148,6 +149,7 @@
                   <tr>
                     <th>Nome</th>
                     <th>Link</th>
+                    <th>Midia</th>
                     <th>Descricao</th>
                     <th>Ordem</th>
                     <th>Ativo</th>

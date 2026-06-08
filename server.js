@@ -1,17 +1,23 @@
 const path = require("path");
+const fs = require("fs");
+const crypto = require("crypto");
 const express = require("express");
 const helmet = require("helmet");
 const bcrypt = require("bcryptjs");
 const session = require("express-session");
 const SQLiteStoreFactory = require("better-sqlite3-session-store");
 const ExcelJS = require("exceljs");
-const { createDatabase, slugify, mapUser } = require("./src/database");
+const { createDatabase, slugify, mapUser } = require(path.join(__dirname, "src", "database.js"));
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const dbFile = path.join(__dirname, "data", "painel.db");
+const uploadDir = path.join(__dirname, "data", "uploads");
+const maxUploadBytes = 20 * 1024 * 1024;
 const storeFactory = SQLiteStoreFactory(session);
 const database = createDatabase(dbFile);
+
+fs.mkdirSync(uploadDir, { recursive: true });
 
 app.disable("x-powered-by");
 
@@ -22,8 +28,8 @@ app.use(
   })
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "32mb" }));
+app.use(express.urlencoded({ extended: false, limit: "32mb" }));
 
 app.use(
   session({
@@ -47,6 +53,11 @@ app.use(
 );
 
 app.use("/assets", express.static(path.join(__dirname, "assets"), {
+  maxAge: "7d",
+  immutable: true,
+}));
+
+app.use("/uploads", express.static(uploadDir, {
   maxAge: "7d",
   immutable: true,
 }));
@@ -128,9 +139,53 @@ function normalizeSystemPayload(body) {
     slug: slugify(body.slug || body.name),
     description: String(body.description || "").trim(),
     url: String(body.url || "").trim(),
+    imagePath: String(body.imagePath || "").trim(),
+    mediaType: String(body.mediaType || "").trim(),
     position: Number(body.position || 1),
     isActive: body.isActive !== false && body.isActive !== "false",
   };
+}
+
+function saveMediaDataUrl(value) {
+  const dataUrl = String(value || "").trim();
+  if (!dataUrl) return { mediaPath: "", mediaType: "" };
+
+  const match = dataUrl.match(/^data:((?:image\/(?:png|jpeg|webp|gif))|(?:video\/(?:mp4|webm)));base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) {
+    throw new Error("Midia invalida.");
+  }
+
+  const mimeType = match[1];
+  const buffer = Buffer.from(match[2], "base64");
+  if (!buffer.length || buffer.length > maxUploadBytes) {
+    throw new Error("Use uma midia de ate 20 MB.");
+  }
+
+  const extensionByType = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "video/mp4": "mp4",
+    "video/webm": "webm",
+  };
+  const filename = `${Date.now().toString(36)}-${crypto.randomBytes(8).toString("hex")}.${
+    extensionByType[mimeType]
+  }`;
+
+  fs.writeFileSync(path.join(uploadDir, filename), buffer);
+  return { mediaPath: filename, mediaType: mimeType };
+}
+
+function validateOptionalUrl(url) {
+  if (!url) return true;
+
+  try {
+    const parsedUrl = new URL(url);
+    return ["http:", "https:"].includes(parsedUrl.protocol);
+  } catch (error) {
+    return false;
+  }
 }
 
 function normalizeUserPayload(body) {
@@ -212,7 +267,7 @@ function getHotspotDateFilter(value) {
 function listHotspotExportItems(date) {
   const filter = getHotspotDateFilter(date);
   const items = filter
-    ? database.listHotspotTelefonesByFirstSeenRange(filter.startUtc, filter.endUtc, 1000000)
+    ? database.listHotspotTelefonesByLastSeenRange(filter.startUtc, filter.endUtc, 1000000)
     : database.listHotspotTelefones(1000000);
 
   return { filter, items };
@@ -409,13 +464,13 @@ app.post("/api/panel/systems", requireAuth, (req, res) => {
   try {
     const name = String(req.body.name || "").trim();
     const url = String(req.body.url || "").trim();
+    const media = saveMediaDataUrl(req.body.mediaData || req.body.imageData);
 
-    if (!name || !url) {
-      return res.status(400).json({ message: "Informe nome e link do sistema." });
+    if (!name || (!url && !media.mediaPath)) {
+      return res.status(400).json({ message: "Informe nome e link ou selecione uma midia." });
     }
 
-    const parsedUrl = new URL(url);
-    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    if (!validateOptionalUrl(url)) {
       return res.status(400).json({ message: "Use um link iniciado com http ou https." });
     }
 
@@ -429,7 +484,9 @@ app.post("/api/panel/systems", requireAuth, (req, res) => {
       name,
       url,
       slug: `${baseSlug}-${Date.now().toString(36)}`,
-      description: req.body.description || "Sistema adicionado pela visualizacao",
+      description: req.body.description || (media.mediaPath && !url ? "Banner adicionado pela visualizacao" : "Sistema adicionado pela visualizacao"),
+      imagePath: media.mediaPath,
+      mediaType: media.mediaType,
       position: database.listSystems().length + 1,
       isActive: true,
     });
@@ -439,6 +496,44 @@ app.post("/api/panel/systems", requireAuth, (req, res) => {
     return res.status(201).json({ system, systems });
   } catch (error) {
     return res.status(400).json({ message: "Nao foi possivel adicionar o sistema." });
+  }
+});
+
+app.put("/api/panel/systems/selection", requireAuth, (req, res) => {
+  try {
+    if (!req.currentUser.secretariaId) {
+      return res.json({ systems: database.getSystemsForUser(req.currentUser) });
+    }
+
+    const ids = Array.isArray(req.body.systemIds) ? req.body.systemIds : [];
+    const normalizedIds = ids.map((id) => Number(id));
+    const hasInvalidId = normalizedIds.some((id) => !Number.isInteger(id) || id <= 0);
+
+    if (hasInvalidId) {
+      return res.status(400).json({ message: "Lista de sistemas invalida." });
+    }
+
+    const selectedIds = Array.from(new Set(normalizedIds));
+    const allowedSystems = database.getSystemsForUser(req.currentUser);
+    const allowedMap = new Map(allowedSystems.map((system, index) => [system.id, { system, index }]));
+    const hasBlockedSystem = selectedIds.some((id) => !allowedMap.has(id));
+
+    if (hasBlockedSystem) {
+      return res.status(404).json({ message: "Sistema nao encontrado para este usuario." });
+    }
+
+    const items = selectedIds
+      .sort((left, right) => allowedMap.get(left).index - allowedMap.get(right).index)
+      .map((systemId, index) => ({
+        systemId,
+        displayOrder: index + 1,
+      }));
+
+    database.replaceSecretariaSystems(req.currentUser.secretariaId, items);
+
+    return res.json({ systems: database.getSystemsForUser(req.currentUser) });
+  } catch (error) {
+    return res.status(400).json({ message: "Nao foi possivel salvar a visualizacao." });
   }
 });
 
@@ -455,13 +550,16 @@ app.put("/api/panel/systems/:id", requireAuth, (req, res) => {
 
     const name = String(req.body.name || "").trim();
     const url = String(req.body.url || "").trim();
+    const media = saveMediaDataUrl(req.body.mediaData || req.body.imageData);
+    const removeMedia = req.body.removeMedia === true || req.body.removeMedia === "true" || req.body.removeImage === true || req.body.removeImage === "true";
+    const imagePath = media.mediaPath || (removeMedia ? "" : existingSystem.imagePath);
+    const mediaType = media.mediaType || (removeMedia ? "" : existingSystem.mediaType || "");
 
-    if (!name || !url) {
-      return res.status(400).json({ message: "Informe nome e link do sistema." });
+    if (!name || (!url && !imagePath)) {
+      return res.status(400).json({ message: "Informe nome e link ou selecione uma midia." });
     }
 
-    const parsedUrl = new URL(url);
-    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    if (!validateOptionalUrl(url)) {
       return res.status(400).json({ message: "Use um link iniciado com http ou https." });
     }
 
@@ -471,6 +569,8 @@ app.put("/api/panel/systems/:id", requireAuth, (req, res) => {
       slug: existingSystem.slug,
       description: String(req.body.description || "").trim(),
       url,
+      imagePath,
+      mediaType,
       position: existingSystem.position,
       isActive: existingSystem.isActive,
     });
@@ -493,14 +593,12 @@ app.delete("/api/panel/systems/:id", requireAuth, (req, res) => {
       return res.status(404).json({ message: "Sistema nao encontrado para este usuario." });
     }
 
-    if (req.currentUser.role === "admin") {
+    if (req.currentUser.secretariaId) {
+      database.removeSystemFromSecretaria(req.currentUser.secretariaId, id);
+    } else if (req.currentUser.role === "admin") {
       database.deactivateSystem(id);
     } else {
-      if (!req.currentUser.secretariaId) {
-        return res.status(400).json({ message: "Usuario sem secretaria vinculada." });
-      }
-
-      database.removeSystemFromSecretaria(req.currentUser.secretariaId, id);
+      return res.status(400).json({ message: "Usuario sem secretaria vinculada." });
     }
 
     const systems = database.getSystemsForUser(req.currentUser);
@@ -606,9 +704,22 @@ app.put("/api/admin/secretarias/:id", requireAdmin, (req, res) => {
 
 app.post("/api/admin/systems", requireAdmin, (req, res) => {
   try {
-    const payload = normalizeSystemPayload(req.body);
+    const media = saveMediaDataUrl(req.body.mediaData || req.body.imageData);
+    const payload = normalizeSystemPayload({
+      ...req.body,
+      imagePath: media.mediaPath,
+      mediaType: media.mediaType,
+    });
     if (!payload.name || !payload.slug) {
       return res.status(400).json({ message: "Nome do sistema e obrigatorio." });
+    }
+
+    if (!payload.url && !payload.imagePath) {
+      return res.status(400).json({ message: "Informe um link ou selecione uma midia." });
+    }
+
+    if (!validateOptionalUrl(payload.url)) {
+      return res.status(400).json({ message: "Use um link iniciado com http ou https." });
     }
 
     const system = database.createSystem(payload);
@@ -620,13 +731,33 @@ app.post("/api/admin/systems", requireAdmin, (req, res) => {
 
 app.put("/api/admin/systems/:id", requireAdmin, (req, res) => {
   try {
+    const existingSystem = database.getSystemById(Number(req.params.id));
+    if (!existingSystem) {
+      return res.status(404).json({ message: "Sistema nao encontrado." });
+    }
+
+    const media = saveMediaDataUrl(req.body.mediaData || req.body.imageData);
+    const removeMedia = req.body.removeMedia === true || req.body.removeMedia === "true" || req.body.removeImage === true || req.body.removeImage === "true";
+    const imagePath = media.mediaPath || (removeMedia ? "" : existingSystem.imagePath);
+    const mediaType = media.mediaType || (removeMedia ? "" : existingSystem.mediaType || "");
+
     const payload = normalizeSystemPayload({
       ...req.body,
       id: req.params.id,
+      imagePath,
+      mediaType,
     });
 
     if (!payload.name || !payload.slug) {
       return res.status(400).json({ message: "Nome do sistema e obrigatorio." });
+    }
+
+    if (!payload.url && !payload.imagePath) {
+      return res.status(400).json({ message: "Informe um link ou selecione uma midia." });
+    }
+
+    if (!validateOptionalUrl(payload.url)) {
+      return res.status(400).json({ message: "Use um link iniciado com http ou https." });
     }
 
     const system = database.updateSystem(payload);

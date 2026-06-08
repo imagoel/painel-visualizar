@@ -42,6 +42,25 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function readMediaFile(file) {
+  if (!file) return Promise.resolve("");
+
+  if (!/^(image\/(png|jpeg|webp|gif)|video\/(mp4|webm))$/.test(file.type)) {
+    return Promise.reject(new Error("Use PNG, JPG, WEBP, GIF, MP4 ou WEBM."));
+  }
+
+  if (file.size > 20 * 1024 * 1024) {
+    return Promise.reject(new Error("Use uma midia de ate 20 MB."));
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result || "")));
+    reader.addEventListener("error", () => reject(new Error("Nao foi possivel ler a midia.")));
+    reader.readAsDataURL(file);
+  });
+}
+
 function fetchJson(url, options = {}) {
   return fetch(url, {
     credentials: "same-origin",
@@ -161,6 +180,26 @@ function renderSystemsTable() {
             <input data-field="slug" type="hidden" value="${escapeHtml(system.slug)}" />
           </td>
           <td><input data-field="url" type="url" value="${escapeHtml(system.url)}" /></td>
+          <td>
+            ${
+              system.mediaUrl
+                ? String(system.mediaType || "").startsWith("video/")
+                  ? `<video class="admin-media-preview" src="${escapeHtml(system.mediaUrl)}" muted loop playsinline></video>`
+                  : `<img class="admin-media-preview" src="${escapeHtml(system.mediaUrl)}" alt="${escapeHtml(system.name)}" />`
+                : `<span class="empty-media">Sem midia</span>`
+            }
+            <input data-field="media" type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" />
+            ${
+              system.mediaUrl
+                ? `
+                  <label class="media-remove-label">
+                    <input data-field="removeMedia" type="checkbox" />
+                    Remover
+                  </label>
+                `
+                : ""
+            }
+          </td>
           <td><input data-field="description" type="text" value="${escapeHtml(system.description || "")}" /></td>
           <td><input data-field="position" type="number" min="1" value="${system.position}" /></td>
           <td><input data-field="isActive" type="checkbox" ${system.isActive ? "checked" : ""} /></td>
@@ -333,6 +372,7 @@ createSystemForm.addEventListener("submit", async (event) => {
   const formData = new FormData(createSystemForm);
 
   try {
+    const mediaData = await readMediaFile(formData.get("media"));
     await fetchJson("/api/admin/systems", {
       method: "POST",
       body: JSON.stringify({
@@ -340,6 +380,7 @@ createSystemForm.addEventListener("submit", async (event) => {
         slug: formData.get("slug"),
         url: formData.get("url"),
         description: formData.get("description"),
+        mediaData,
         position: Number(formData.get("position") || 1),
       }),
     });
@@ -433,6 +474,7 @@ systemsTable.addEventListener("click", async (event) => {
   if (action !== "save-system") return;
 
   try {
+    const mediaData = await readMediaFile(row.querySelector('[data-field="media"]').files[0]);
     await fetchJson(`/api/admin/systems/${id}`, {
       method: "PUT",
       body: JSON.stringify({
@@ -440,6 +482,8 @@ systemsTable.addEventListener("click", async (event) => {
         slug: row.querySelector('[data-field="slug"]').value,
         url: row.querySelector('[data-field="url"]').value,
         description: row.querySelector('[data-field="description"]').value,
+        mediaData,
+        removeMedia: Boolean(row.querySelector('[data-field="removeMedia"]')?.checked),
         position: Number(row.querySelector('[data-field="position"]').value || 1),
         isActive: row.querySelector('[data-field="isActive"]').checked,
       }),

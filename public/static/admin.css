@@ -302,33 +302,38 @@ table {
 
 .systems-table th:nth-child(1),
 .systems-table td:nth-child(1) {
-  width: 17%;
+  width: 15%;
 }
 
 .systems-table th:nth-child(2),
 .systems-table td:nth-child(2) {
-  width: 28%;
+  width: 23%;
 }
 
 .systems-table th:nth-child(3),
 .systems-table td:nth-child(3) {
-  width: 23%;
+  width: 16%;
 }
 
 .systems-table th:nth-child(4),
 .systems-table td:nth-child(4) {
-  width: 10%;
+  width: 19%;
 }
 
 .systems-table th:nth-child(5),
 .systems-table td:nth-child(5) {
   width: 8%;
-  text-align: center;
 }
 
 .systems-table th:nth-child(6),
 .systems-table td:nth-child(6) {
-  width: 14%;
+  width: 7%;
+  text-align: center;
+}
+
+.systems-table th:nth-child(7),
+.systems-table td:nth-child(7) {
+  width: 12%;
 }
 
 th,
@@ -361,6 +366,38 @@ td select {
 
 #systemsTable input[data-field="position"] {
   min-width: 64px;
+}
+
+.admin-media-preview {
+  width: 100%;
+  max-height: 82px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #eef2f7;
+  display: block;
+  margin-bottom: 0.45rem;
+}
+
+.empty-media {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.media-remove-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.media-remove-label input {
+  width: 14px;
+  min-width: 14px;
+  height: 14px;
 }
 
 .row-save {
