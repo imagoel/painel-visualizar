@@ -49,8 +49,8 @@ function readMediaFile(file) {
     return Promise.reject(new Error("Use PNG, JPG, WEBP, GIF, MP4 ou WEBM."));
   }
 
-  if (file.size > 20 * 1024 * 1024) {
-    return Promise.reject(new Error("Use uma midia de ate 20 MB."));
+  if (file.size > 100 * 1024 * 1024) {
+    return Promise.reject(new Error("Use uma midia de ate 100 MB."));
   }
 
   return new Promise((resolve, reject) => {
@@ -90,7 +90,7 @@ function fetchJson(url, options = {}) {
 
     if (!response.ok) {
       if (response.status === 413) {
-        throw new Error(payload.message || "Arquivo muito grande. Use uma midia de ate 20 MB.");
+        throw new Error(payload.message || "Arquivo muito grande. Use uma midia de ate 100 MB.");
       }
 
       throw new Error(payload.message || "Nao foi possivel concluir a requisicao.");

@@ -13,8 +13,8 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 const dbFile = path.join(__dirname, "data", "painel.db");
 const uploadDir = path.join(__dirname, "data", "uploads");
-const maxUploadBytes = 20 * 1024 * 1024;
-const requestBodyLimit = "50mb";
+const maxUploadBytes = 100 * 1024 * 1024;
+const requestBodyLimit = "150mb";
 const storeFactory = SQLiteStoreFactory(session);
 const database = createDatabase(dbFile);
 
@@ -159,7 +159,7 @@ function saveMediaDataUrl(value) {
   const mimeType = match[1];
   const buffer = Buffer.from(match[2], "base64");
   if (!buffer.length || buffer.length > maxUploadBytes) {
-    throw new Error("Use uma midia de ate 20 MB.");
+    throw new Error("Use uma midia de ate 100 MB.");
   }
 
   const extensionByType = {
@@ -840,7 +840,7 @@ app.put("/api/admin/secretarias/:id/systems", requireAdmin, (req, res) => {
 app.use((error, req, res, next) => {
   if (error && (error.type === "entity.too.large" || error.status === 413)) {
     return res.status(413).json({
-      message: "Arquivo muito grande. Use uma midia de ate 20 MB. Se houver Nginx, ajuste client_max_body_size para 50M.",
+      message: "Arquivo muito grande. Use uma midia de ate 100 MB. Se houver Nginx, ajuste client_max_body_size para 150M.",
     });
   }
 
