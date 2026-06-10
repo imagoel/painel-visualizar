@@ -89,6 +89,10 @@ function fetchJson(url, options = {}) {
     }
 
     if (!response.ok) {
+      if (response.status === 413) {
+        throw new Error(payload.message || "Arquivo muito grande. Use uma midia de ate 20 MB.");
+      }
+
       throw new Error(payload.message || "Nao foi possivel concluir a requisicao.");
     }
 

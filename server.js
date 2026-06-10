@@ -14,6 +14,7 @@ const port = Number(process.env.PORT || 3000);
 const dbFile = path.join(__dirname, "data", "painel.db");
 const uploadDir = path.join(__dirname, "data", "uploads");
 const maxUploadBytes = 20 * 1024 * 1024;
+const requestBodyLimit = "50mb";
 const storeFactory = SQLiteStoreFactory(session);
 const database = createDatabase(dbFile);
 
@@ -28,8 +29,8 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "32mb" }));
-app.use(express.urlencoded({ extended: false, limit: "32mb" }));
+app.use(express.json({ limit: requestBodyLimit }));
+app.use(express.urlencoded({ extended: false, limit: requestBodyLimit }));
 
 app.use(
   session({
@@ -834,6 +835,20 @@ app.put("/api/admin/secretarias/:id/systems", requireAdmin, (req, res) => {
   } catch (error) {
     return res.status(400).json({ message: "Nao foi possivel salvar os acessos da secretaria." });
   }
+});
+
+app.use((error, req, res, next) => {
+  if (error && (error.type === "entity.too.large" || error.status === 413)) {
+    return res.status(413).json({
+      message: "Arquivo muito grande. Use uma midia de ate 20 MB. Se houver Nginx, ajuste client_max_body_size para 50M.",
+    });
+  }
+
+  if (req.path.startsWith("/api")) {
+    return res.status(500).json({ message: "Nao foi possivel concluir a requisicao." });
+  }
+
+  return next(error);
 });
 
 app.use("/api", (req, res) => {
