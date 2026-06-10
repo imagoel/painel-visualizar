@@ -55,25 +55,6 @@ O banco SQLite fica em `data/painel.db`.
 
 No `docker-compose.yml`, o volume `painel_data` garante persistencia de usuarios, secretarias e sistemas mesmo apos redeploy.
 
-## Uploads e Nginx
-
-O sistema aceita midias de ate 20 MB por item. Como o envio atual usa JSON com base64, o corpo HTTP fica maior que o arquivo original; por isso o Express aceita ate 50 MB por requisicao.
-
-Se houver Nginx na frente do container, ajuste o site/proxy com:
-
-```nginx
-client_max_body_size 50M;
-```
-
-Depois valide e recarregue o Nginx:
-
-```bash
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-Ha um exemplo completo em `deploy/nginx/visualizador.conf`.
-
 ## Captura de telefones do hotspot
 
 O endpoint publico espera `POST` com `telefone`, `mac`, `ip` e `origem`.
