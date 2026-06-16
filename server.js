@@ -319,16 +319,17 @@ async function buildHotspotWorkbook(items, filter) {
 
   worksheet.columns = [
     { header: "Telefone", key: "telefone", width: 18 },
+    { header: "Origem", key: "origem", width: 24 },
     { header: "MAC", key: "mac", width: 22 },
     { header: "Ultimo registro", key: "lastSeenAt", width: 22 },
   ];
 
   worksheet.spliceRows(1, 0, ["Telefones capturados no hotspot"]);
   worksheet.spliceRows(2, 0, [
-    filter ? `Filtro: primeira captura em ${filter.label}` : "Filtro: todos os registros",
+    filter ? `Filtro: acesso em ${filter.label}` : "Filtro: todos os registros",
   ]);
-  worksheet.mergeCells("A1:C1");
-  worksheet.mergeCells("A2:C2");
+  worksheet.mergeCells("A1:D1");
+  worksheet.mergeCells("A2:D2");
 
   worksheet.getCell("A1").font = { bold: true, size: 16, color: { argb: "FFFFFFFF" } };
   worksheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF155A7E" } };
@@ -347,6 +348,7 @@ async function buildHotspotWorkbook(items, filter) {
   items.forEach((item) => {
     worksheet.addRow({
       telefone: item.telefone,
+      origem: item.origem,
       mac: item.mac,
       lastSeenAt: formatCsvDateTime(item.lastSeenAt),
     });
@@ -354,7 +356,7 @@ async function buildHotspotWorkbook(items, filter) {
 
   worksheet.autoFilter = {
     from: { row: 3, column: 1 },
-    to: { row: 3, column: 3 },
+    to: { row: 3, column: 4 },
   };
 
   worksheet.eachRow((row, rowNumber) => {
@@ -373,6 +375,7 @@ async function buildHotspotWorkbook(items, filter) {
   });
 
   worksheet.getColumn("telefone").numFmt = "@";
+  worksheet.getColumn("origem").numFmt = "@";
   worksheet.getColumn("mac").numFmt = "@";
 
   return workbook.xlsx.writeBuffer();
@@ -645,11 +648,13 @@ app.get("/api/admin/hotspot/telefones.csv", requireAdmin, (req, res) => {
   const { items } = listHotspotExportItems(req.query.date);
   const header = [
     "numero do telefone",
+    "origem",
     "mac",
     "ultimo registro",
   ];
   const rows = items.map((item) => [
     item.telefone,
+    item.origem,
     item.mac,
     formatCsvDateTime(item.lastSeenAt),
   ]);

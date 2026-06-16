@@ -306,7 +306,7 @@ function renderHotspotPhonesTable() {
   if (!state.hotspotTelefones.length) {
     hotspotPhonesTable.innerHTML = `
       <tr>
-        <td colspan="5" class="empty-state">Nenhum telefone capturado ainda.</td>
+        <td colspan="6" class="empty-state">Nenhum telefone capturado ainda.</td>
       </tr>
     `;
     return;
@@ -318,6 +318,7 @@ function renderHotspotPhonesTable() {
       (item) => `
         <tr>
           <td><strong>${escapeHtml(item.telefone)}</strong></td>
+          <td>${escapeHtml(item.origem || "-")}</td>
           <td>${escapeHtml(item.mac || "-")}</td>
           <td>${escapeHtml(item.ip || "-")}</td>
           <td>${escapeHtml(item.totalAcessos || 1)}</td>
