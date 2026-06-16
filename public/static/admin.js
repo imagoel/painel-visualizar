@@ -216,6 +216,15 @@ function renderSystemsTable() {
             }
           </td>
           <td><input data-field="description" type="text" value="${escapeHtml(system.description || "")}" /></td>
+          <td>
+            <input
+              data-field="displaySeconds"
+              type="number"
+              min="1"
+              max="3600"
+              value="${escapeHtml(system.displaySeconds || 10)}"
+            />
+          </td>
           <td><input data-field="position" type="number" min="1" value="${system.position}" /></td>
           <td><input data-field="isActive" type="checkbox" ${system.isActive ? "checked" : ""} /></td>
           <td class="row-actions">
@@ -407,6 +416,7 @@ createSystemForm.addEventListener("submit", async (event) => {
         url,
         description: formData.get("description"),
         mediaData,
+        displaySeconds: Number(formData.get("displaySeconds") || 10),
         position: Number(formData.get("position") || 1),
       }),
     });
@@ -517,6 +527,7 @@ systemsTable.addEventListener("click", async (event) => {
         description: row.querySelector('[data-field="description"]').value,
         mediaData,
         removeMedia: Boolean(row.querySelector('[data-field="removeMedia"]')?.checked),
+        displaySeconds: Number(row.querySelector('[data-field="displaySeconds"]').value || 10),
         position: Number(row.querySelector('[data-field="position"]').value || 1),
         isActive: row.querySelector('[data-field="isActive"]').checked,
       }),

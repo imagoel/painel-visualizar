@@ -142,9 +142,16 @@ function normalizeSystemPayload(body) {
     url: String(body.url || "").trim(),
     imagePath: String(body.imagePath || "").trim(),
     mediaType: String(body.mediaType || "").trim(),
+    displaySeconds: normalizeDisplaySeconds(body.displaySeconds),
     position: Number(body.position || 1),
     isActive: body.isActive !== false && body.isActive !== "false",
   };
+}
+
+function normalizeDisplaySeconds(value, fallback = 10) {
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds) || seconds <= 0) return fallback;
+  return Math.min(Math.max(Math.round(seconds), 1), 3600);
 }
 
 function saveMediaDataUrl(value) {
@@ -516,19 +523,17 @@ app.put("/api/panel/systems/selection", requireAuth, (req, res) => {
 
     const selectedIds = Array.from(new Set(normalizedIds));
     const allowedSystems = database.getSystemsForUser(req.currentUser);
-    const allowedMap = new Map(allowedSystems.map((system, index) => [system.id, { system, index }]));
+    const allowedMap = new Map(allowedSystems.map((system) => [system.id, system]));
     const hasBlockedSystem = selectedIds.some((id) => !allowedMap.has(id));
 
     if (hasBlockedSystem) {
       return res.status(404).json({ message: "Sistema nao encontrado para este usuario." });
     }
 
-    const items = selectedIds
-      .sort((left, right) => allowedMap.get(left).index - allowedMap.get(right).index)
-      .map((systemId, index) => ({
-        systemId,
-        displayOrder: index + 1,
-      }));
+    const items = selectedIds.map((systemId, index) => ({
+      systemId,
+      displayOrder: index + 1,
+    }));
 
     database.replaceSecretariaSystems(req.currentUser.secretariaId, items);
 
@@ -572,6 +577,7 @@ app.put("/api/panel/systems/:id", requireAuth, (req, res) => {
       url,
       imagePath,
       mediaType,
+      displaySeconds: normalizeDisplaySeconds(req.body.displaySeconds, existingSystem.displaySeconds),
       position: existingSystem.position,
       isActive: existingSystem.isActive,
     });
@@ -747,6 +753,7 @@ app.put("/api/admin/systems/:id", requireAdmin, (req, res) => {
       id: req.params.id,
       imagePath,
       mediaType,
+      displaySeconds: req.body.displaySeconds ?? existingSystem.displaySeconds,
     });
 
     if (!payload.name || !payload.slug) {

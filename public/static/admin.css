@@ -263,7 +263,7 @@ body {
 }
 
 .systems-form {
-  grid-template-columns: minmax(170px, 1fr) minmax(220px, 1.35fr) 96px;
+  grid-template-columns: minmax(170px, 1fr) minmax(220px, 1.35fr) 96px 96px;
   align-items: center;
 }
 
@@ -302,38 +302,43 @@ table {
 
 .systems-table th:nth-child(1),
 .systems-table td:nth-child(1) {
-  width: 15%;
+  width: 14%;
 }
 
 .systems-table th:nth-child(2),
 .systems-table td:nth-child(2) {
-  width: 23%;
+  width: 20%;
 }
 
 .systems-table th:nth-child(3),
 .systems-table td:nth-child(3) {
-  width: 16%;
+  width: 15%;
 }
 
 .systems-table th:nth-child(4),
 .systems-table td:nth-child(4) {
-  width: 19%;
+  width: 17%;
 }
 
 .systems-table th:nth-child(5),
 .systems-table td:nth-child(5) {
-  width: 8%;
+  width: 7%;
 }
 
 .systems-table th:nth-child(6),
 .systems-table td:nth-child(6) {
   width: 7%;
-  text-align: center;
 }
 
 .systems-table th:nth-child(7),
 .systems-table td:nth-child(7) {
-  width: 12%;
+  width: 6%;
+  text-align: center;
+}
+
+.systems-table th:nth-child(8),
+.systems-table td:nth-child(8) {
+  width: 14%;
 }
 
 th,
@@ -365,6 +370,10 @@ td select {
 }
 
 #systemsTable input[data-field="position"] {
+  min-width: 64px;
+}
+
+#systemsTable input[data-field="displaySeconds"] {
   min-width: 64px;
 }
 
@@ -479,8 +488,13 @@ td select {
 }
 
 @media (min-width: 1181px) {
-  .systems-form input[name="position"] {
+  .systems-form input[name="displaySeconds"] {
     grid-column: 3;
+    grid-row: 1;
+  }
+
+  .systems-form input[name="position"] {
+    grid-column: 4;
     grid-row: 1;
   }
 

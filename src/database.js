@@ -54,6 +54,12 @@ function getMediaType(item) {
   return "image";
 }
 
+function getDisplaySeconds(item) {
+  const seconds = Number(item.display_seconds);
+  if (!Number.isFinite(seconds) || seconds <= 0) return 10;
+  return seconds;
+}
+
 function mapSystem(item, position = item.position) {
   const mediaType = getMediaType(item);
 
@@ -67,6 +73,7 @@ function mapSystem(item, position = item.position) {
     imageUrl: item.image_path ? `/uploads/${item.image_path}` : "",
     mediaUrl: item.image_path ? `/uploads/${item.image_path}` : "",
     mediaType,
+    displaySeconds: getDisplaySeconds(item),
     position,
     isActive: Boolean(item.is_active),
   };
@@ -105,6 +112,7 @@ function ensureSchema(db) {
       url TEXT NOT NULL DEFAULT '',
       image_path TEXT NOT NULL DEFAULT '',
       media_type TEXT NOT NULL DEFAULT '',
+      display_seconds INTEGER NOT NULL DEFAULT 10,
       position INTEGER NOT NULL DEFAULT 1,
       is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -158,6 +166,11 @@ function ensureSchema(db) {
   const hasMediaType = systemColumns.some((column) => column.name === "media_type");
   if (!hasMediaType) {
     db.exec("ALTER TABLE systems ADD COLUMN media_type TEXT NOT NULL DEFAULT ''");
+  }
+
+  const hasDisplaySeconds = systemColumns.some((column) => column.name === "display_seconds");
+  if (!hasDisplaySeconds) {
+    db.exec("ALTER TABLE systems ADD COLUMN display_seconds INTEGER NOT NULL DEFAULT 10");
   }
 }
 
@@ -373,8 +386,8 @@ function createDatabase(filePath) {
       WHERE id = @id
     `),
     insertSystem: db.prepare(`
-      INSERT INTO systems (name, slug, description, url, image_path, media_type, position, is_active, updated_at)
-      VALUES (@name, @slug, @description, @url, @image_path, @media_type, @position, @is_active, CURRENT_TIMESTAMP)
+      INSERT INTO systems (name, slug, description, url, image_path, media_type, display_seconds, position, is_active, updated_at)
+      VALUES (@name, @slug, @description, @url, @image_path, @media_type, @display_seconds, @position, @is_active, CURRENT_TIMESTAMP)
     `),
     updateSystem: db.prepare(`
       UPDATE systems
@@ -385,6 +398,7 @@ function createDatabase(filePath) {
         url = @url,
         image_path = @image_path,
         media_type = @media_type,
+        display_seconds = @display_seconds,
         position = @position,
         is_active = @is_active,
         updated_at = CURRENT_TIMESTAMP
@@ -585,6 +599,7 @@ function createDatabase(filePath) {
         url: payload.url || "",
         image_path: payload.imagePath || "",
         media_type: payload.mediaType || "",
+        display_seconds: payload.displaySeconds || 10,
         position: payload.position,
         is_active: boolToInt(payload.isActive),
       });
@@ -599,6 +614,7 @@ function createDatabase(filePath) {
         url: payload.url || "",
         image_path: payload.imagePath || "",
         media_type: payload.mediaType || "",
+        display_seconds: payload.displaySeconds || 10,
         position: payload.position,
         is_active: boolToInt(payload.isActive),
       });
@@ -619,6 +635,7 @@ function createDatabase(filePath) {
         url: payload.url || "",
         image_path: payload.imagePath || "",
         media_type: payload.mediaType || "",
+        display_seconds: payload.displaySeconds || 10,
         position: payload.position,
         is_active: boolToInt(payload.isActive),
       });

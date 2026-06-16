@@ -158,39 +158,6 @@ body {
   color: var(--muted);
 }
 
-.tv-dots {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 10px;
-  z-index: 25;
-  opacity: 0.72;
-  transition: opacity 180ms ease;
-}
-
-.tv-dots:hover {
-  opacity: 1;
-}
-
-.tv-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 2px solid #111;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.45);
-  cursor: pointer;
-  transition: transform 150ms ease, background 150ms ease;
-}
-
-.tv-dot.is-active {
-  background: var(--accent);
-  border-color: #111;
-  transform: scale(1.24);
-}
-
 .tv-progress {
   position: fixed;
   bottom: 0;
@@ -275,6 +242,12 @@ body {
 
 .visualization-option-fields {
   display: grid;
+  gap: 0.45rem;
+}
+
+.visualization-meta-fields {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.45fr) minmax(140px, 0.55fr);
   gap: 0.45rem;
 }
 
@@ -399,6 +372,10 @@ body {
 
   .visualization-option {
     grid-template-columns: auto 1fr;
+  }
+
+  .visualization-meta-fields {
+    grid-template-columns: 1fr;
   }
 
   .remove-system-button {

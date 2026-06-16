@@ -1,5 +1,4 @@
 const stage = document.getElementById("stage");
-const dotsEl = document.getElementById("dots");
 const progressEl = document.getElementById("progress");
 const logoutButton = document.getElementById("logoutButton");
 const editViewButton = document.getElementById("editViewButton");
@@ -26,7 +25,6 @@ const state = {
   progressStart: null,
   progressFrame: null,
   tiles: [],
-  dots: [],
   isPaused: false,
   isEditing: false,
   controlsTimer: null,
@@ -99,6 +97,16 @@ function isValidOptionalUrl(url) {
   }
 }
 
+function normalizeDisplaySeconds(value, fallback = 10) {
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds) || seconds <= 0) return fallback;
+  return Math.min(Math.max(Math.round(seconds), 1), 3600);
+}
+
+function getSlideDuration(system) {
+  return normalizeDisplaySeconds(system?.displaySeconds, state.slideDuration / 1000) * 1000;
+}
+
 function requestFullscreen() {
   const element = document.documentElement;
   const fn =
@@ -158,7 +166,7 @@ function renderVisualizationOptions() {
   const selected = new Set(state.selectedSystemIds.map(String));
   visualizationOptions.innerHTML = state.availableSystems
     .map(
-      (system) => `
+      (system, index) => `
         <div class="visualization-option" data-system-id="${escapeHtml(system.id)}">
           <input
             type="checkbox"
@@ -168,6 +176,23 @@ function renderVisualizationOptions() {
             aria-label="Exibir ${escapeHtml(system.name)}"
           />
           <div class="visualization-option-fields">
+            <div class="visualization-meta-fields">
+              <input
+                data-field="displayOrder"
+                type="number"
+                min="1"
+                value="${escapeHtml(system.position || index + 1)}"
+                placeholder="Ordem"
+              />
+              <input
+                data-field="displaySeconds"
+                type="number"
+                min="1"
+                max="3600"
+                value="${escapeHtml(system.displaySeconds || 10)}"
+                placeholder="Tempo (s)"
+              />
+            </div>
             <input data-field="name" type="text" value="${escapeHtml(system.name)}" placeholder="Nome do sistema ou banner" />
             <input data-field="url" type="text" value="${escapeHtml(system.url)}" placeholder="Link opcional do sistema" />
             <input
@@ -222,9 +247,7 @@ function renderSystems() {
       ];
 
   stage.innerHTML = "";
-  dotsEl.innerHTML = "";
   state.tiles = [];
-  state.dots = [];
 
   systems.forEach((system, index) => {
     const tile = document.createElement("section");
@@ -236,9 +259,15 @@ function renderSystems() {
         video.src = system.mediaUrl;
         video.className = "tv-media";
         video.muted = true;
-        video.loop = true;
+        video.loop = false;
         video.autoplay = true;
         video.playsInline = true;
+        video.preload = "auto";
+        video.addEventListener("ended", () => {
+          if (!state.isPaused && !state.isEditing && state.tiles[state.current] === tile) {
+            advanceSlide();
+          }
+        });
         tile.appendChild(video);
       } else {
         const image = document.createElement("img");
@@ -259,50 +288,68 @@ function renderSystems() {
 
     stage.appendChild(tile);
     state.tiles.push(tile);
-
-    const dot = document.createElement("button");
-    dot.type = "button";
-    dot.className = "tv-dot";
-    dot.title = system.name;
-    dot.addEventListener("pointerdown", (event) => {
-      event.stopPropagation();
-      pauseSlideshow();
-      showSlide(index);
-      resetInactivity();
-    });
-
-    dotsEl.appendChild(dot);
-    state.dots.push(dot);
   });
 }
 
 function restartSlideshow() {
-  clearInterval(state.timer);
+  clearTimeout(state.timer);
   resetProgress();
   renderSystems();
+  state.current = 0;
   showSlide(0);
   startSlideshow();
 }
 
+function stopInactiveVideos() {
+  state.tiles.forEach((tile, tileIndex) => {
+    const video = tile.querySelector("video");
+    if (!video || tileIndex === state.current) return;
+
+    video.pause();
+    try {
+      video.currentTime = 0;
+    } catch (error) {}
+  });
+}
+
 function showSlide(index) {
+  if (!state.tiles.length) return;
+
   state.current = ((index % state.tiles.length) + state.tiles.length) % state.tiles.length;
   state.tiles.forEach((tile, tileIndex) => {
     tile.classList.toggle("is-active", tileIndex === state.current);
   });
-  state.dots.forEach((dot, dotIndex) => {
-    dot.classList.toggle("is-active", dotIndex === state.current);
-  });
+
+  stopInactiveVideos();
 }
 
-function startProgress() {
+function startProgress(durationMs) {
   cancelAnimationFrame(state.progressFrame);
   state.progressStart = performance.now();
 
   const tick = (now) => {
     const elapsed = now - state.progressStart;
-    const percent = Math.min((elapsed / state.slideDuration) * 100, 100);
+    const percent = Math.min((elapsed / durationMs) * 100, 100);
     progressEl.style.width = `${percent}%`;
-    if (percent < 100) {
+    if (percent < 100 && !state.isPaused && !state.isEditing) {
+      state.progressFrame = requestAnimationFrame(tick);
+    }
+  };
+
+  state.progressFrame = requestAnimationFrame(tick);
+}
+
+function startVideoProgress(video) {
+  cancelAnimationFrame(state.progressFrame);
+
+  const tick = () => {
+    if (Number.isFinite(video.duration) && video.duration > 0) {
+      progressEl.style.width = `${Math.min((video.currentTime / video.duration) * 100, 100)}%`;
+    } else {
+      progressEl.style.width = "0%";
+    }
+
+    if (!video.ended && !state.isPaused && !state.isEditing) {
       state.progressFrame = requestAnimationFrame(tick);
     }
   };
@@ -315,23 +362,53 @@ function resetProgress() {
   progressEl.style.width = "0%";
 }
 
+function scheduleActiveSlide() {
+  clearTimeout(state.timer);
+  resetProgress();
+
+  const activeTile = state.tiles[state.current];
+  const activeSystem = state.systems[state.current];
+  if (!activeTile) return;
+
+  const video = activeTile.querySelector("video");
+  if (video) {
+    try {
+      video.currentTime = 0;
+    } catch (error) {}
+    startVideoProgress(video);
+    Promise.resolve(video.play()).catch(() => {
+      const fallbackDuration = getSlideDuration(activeSystem);
+      startProgress(fallbackDuration);
+      state.timer = setTimeout(advanceSlide, fallbackDuration);
+    });
+    return;
+  }
+
+  const duration = getSlideDuration(activeSystem);
+  startProgress(duration);
+  state.timer = setTimeout(advanceSlide, duration);
+}
+
+function advanceSlide() {
+  if (state.isPaused || state.isEditing || !state.tiles.length) return;
+
+  showSlide(state.current + 1);
+  scheduleActiveSlide();
+}
+
 function startSlideshow() {
   state.isPaused = false;
-  clearInterval(state.timer);
+  clearTimeout(state.timer);
   showSlide(state.current);
-  startProgress();
-
-  state.timer = setInterval(() => {
-    state.current = (state.current + 1) % state.tiles.length;
-    showSlide(state.current);
-    startProgress();
-  }, state.slideDuration);
+  scheduleActiveSlide();
 }
 
 function pauseSlideshow() {
   if (state.isPaused) return;
   state.isPaused = true;
-  clearInterval(state.timer);
+  clearTimeout(state.timer);
+  const activeVideo = state.tiles[state.current]?.querySelector("video");
+  if (activeVideo) activeVideo.pause();
   resetProgress();
 }
 
@@ -367,9 +444,16 @@ function closeVisualizationModal(shouldResume = true) {
 }
 
 function getCheckedVisualizationIds() {
-  return Array.from(visualizationOptions.querySelectorAll('input[data-field="enabled"]:checked')).map(
-    (input) => input.value
-  );
+  return Array.from(visualizationOptions.querySelectorAll(".visualization-option[data-system-id]"))
+    .map((row, index) => ({
+      id: row.dataset.systemId,
+      enabled: row.querySelector('[data-field="enabled"]').checked,
+      order: Number(row.querySelector('[data-field="displayOrder"]').value || index + 1),
+      index,
+    }))
+    .filter((item) => item.enabled)
+    .sort((left, right) => left.order - right.order || left.index - right.index)
+    .map((item) => item.id);
 }
 
 async function saveEditedSystems() {
@@ -383,6 +467,7 @@ async function saveEditedSystems() {
     const name = row.querySelector('[data-field="name"]').value.trim();
     const url = row.querySelector('[data-field="url"]').value.trim();
     const description = row.querySelector('[data-field="description"]').value.trim();
+    const displaySeconds = normalizeDisplaySeconds(row.querySelector('[data-field="displaySeconds"]').value);
     const mediaFile = row.querySelector('[data-field="media"]').files[0];
     const removeMedia = Boolean(row.querySelector('[data-field="removeMedia"]')?.checked);
     const mediaData = await readMediaFile(mediaFile);
@@ -400,6 +485,7 @@ async function saveEditedSystems() {
       name !== original.name ||
       url !== original.url ||
       description !== (original.description || "") ||
+      displaySeconds !== normalizeDisplaySeconds(original.displaySeconds) ||
       Boolean(mediaData) ||
       removeMedia;
 
@@ -407,7 +493,7 @@ async function saveEditedSystems() {
 
     await fetchJson(`/api/panel/systems/${id}`, {
       method: "PUT",
-      body: JSON.stringify({ name, url, description, mediaData, removeMedia }),
+      body: JSON.stringify({ name, url, description, displaySeconds, mediaData, removeMedia }),
     });
   }
 }
@@ -435,7 +521,6 @@ function syncSelectedSystemsAfterRefresh(previouslySelectedIds) {
 
 async function applyVisualization() {
   const checkedIds = getCheckedVisualizationIds();
-
   if (!checkedIds.length && state.availableSystems.length) {
     visualizationMessage.textContent = "Selecione pelo menos um sistema.";
     return;
@@ -503,6 +588,7 @@ async function addSystem(event) {
   const name = String(formData.get("name") || "").trim();
   const url = String(formData.get("url") || "").trim();
   const checkedIds = getCheckedVisualizationIds();
+  const displaySeconds = normalizeDisplaySeconds(formData.get("displaySeconds"));
 
   try {
     const mediaData = await readMediaFile(formData.get("media"));
@@ -517,7 +603,7 @@ async function addSystem(event) {
 
     const payload = await fetchJson("/api/panel/systems", {
       method: "POST",
-      body: JSON.stringify({ name, url, mediaData }),
+      body: JSON.stringify({ name, url, displaySeconds, mediaData }),
     });
 
     state.availableSystems = payload.systems;
@@ -538,48 +624,23 @@ async function addSystem(event) {
 }
 
 function registerInteractions() {
-  const onUserInteraction = () => {
-    pauseSlideshow();
-    resetInactivity();
+  const keepFullscreenReady = () => {
+    requestFullscreen();
   };
 
-  document.addEventListener("pointerdown", onUserInteraction, { passive: true });
+  document.addEventListener("pointerdown", keepFullscreenReady, { passive: true });
+  document.addEventListener("keydown", keepFullscreenReady);
   document.addEventListener(
     "mousemove",
     (event) => {
-      onUserInteraction();
       if (event.clientY <= 110) {
         showControls();
       }
     },
     { passive: true }
   );
-  document.addEventListener("keydown", onUserInteraction);
   controlsRevealZone.addEventListener("pointerenter", showControls);
   controlsRevealZone.addEventListener("pointermove", showControls);
-
-  let hadFocus = true;
-  setInterval(() => {
-    const hasFocusNow = document.hasFocus();
-    if (hadFocus && !hasFocusNow) {
-      onUserInteraction();
-    }
-    hadFocus = hasFocusNow;
-  }, 500);
-
-  document.addEventListener("keydown", (event) => {
-    if (state.isEditing) return;
-    if (event.ctrlKey || event.altKey || event.metaKey) return;
-
-    const shortcut = Number(event.key);
-    if (!Number.isInteger(shortcut) || shortcut < 1 || shortcut > state.tiles.length) {
-      return;
-    }
-
-    pauseSlideshow();
-    showSlide(shortcut - 1);
-    resetInactivity();
-  });
 }
 
 async function bootstrap() {
