@@ -248,7 +248,8 @@ body {
   font-weight: 700;
 }
 
-.hotspot-export-actions input {
+.hotspot-export-actions input,
+.hotspot-export-actions select {
   min-width: 170px;
 }
 

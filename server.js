@@ -272,13 +272,22 @@ function getHotspotDateFilter(value) {
   };
 }
 
-function listHotspotExportItems(date) {
+function normalizeHotspotOrigemFilter(value) {
+  return String(value || "").trim().slice(0, 80);
+}
+
+function listHotspotExportItems(date, origem) {
   const filter = getHotspotDateFilter(date);
-  const items = filter
+  const origemFilter = normalizeHotspotOrigemFilter(origem);
+  let items = filter
     ? database.listHotspotTelefonesByLastSeenRange(filter.startUtc, filter.endUtc, 1000000)
     : database.listHotspotTelefones(1000000);
 
-  return { filter, items };
+  if (origemFilter) {
+    items = items.filter((item) => item.origem === origemFilter);
+  }
+
+  return { filter, origem: origemFilter, items };
 }
 
 function saveHotspotTelefoneFromRequest(req, res) {
@@ -308,7 +317,7 @@ function formatCsvDateTime(value) {
   });
 }
 
-async function buildHotspotWorkbook(items, filter) {
+async function buildHotspotWorkbook(items, filter, origem) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Painel Visualizar";
   workbook.created = new Date();
@@ -325,9 +334,12 @@ async function buildHotspotWorkbook(items, filter) {
   ];
 
   worksheet.spliceRows(1, 0, ["Telefones capturados no hotspot"]);
-  worksheet.spliceRows(2, 0, [
-    filter ? `Filtro: acesso em ${filter.label}` : "Filtro: todos os registros",
-  ]);
+  const filters = [];
+  filters.push(filter ? `acesso em ${filter.label}` : "todos os registros");
+  if (origem) {
+    filters.push(`hotspot ${origem}`);
+  }
+  worksheet.spliceRows(2, 0, [`Filtro: ${filters.join(" / ")}`]);
   worksheet.mergeCells("A1:D1");
   worksheet.mergeCells("A2:D2");
 
@@ -618,7 +630,7 @@ app.delete("/api/panel/systems/:id", requireAuth, (req, res) => {
 });
 
 app.get("/api/admin/bootstrap", requireAdmin, (req, res) => {
-  const hotspot = listHotspotExportItems(req.query.hotspotDate || req.query.date);
+  const hotspot = listHotspotExportItems(req.query.hotspotDate || req.query.date, req.query.origem);
   const hotspotTotal = database.countHotspotTelefones();
 
   res.json({
@@ -627,25 +639,27 @@ app.get("/api/admin/bootstrap", requireAdmin, (req, res) => {
     systems: database.listSystems(),
     users: database.listUsers(),
     assignments: database.listAssignments(),
+    hotspotOrigins: database.listHotspotOrigens(),
     hotspotTelefones: hotspot.items.slice(0, 1000),
     hotspotTelefoneCount: hotspotTotal,
-    hotspotDiaCount: hotspot.filter ? hotspot.items.length : hotspotTotal,
+    hotspotDiaCount: hotspot.filter || hotspot.origem ? hotspot.items.length : hotspotTotal,
   });
 });
 
 app.get("/api/admin/hotspot/telefones", requireAdmin, (req, res) => {
-  const hotspot = listHotspotExportItems(req.query.date);
+  const hotspot = listHotspotExportItems(req.query.date, req.query.origem);
   const hotspotTotal = database.countHotspotTelefones();
 
   res.json({
     items: hotspot.items.slice(0, 2000),
-    total: hotspot.filter ? hotspot.items.length : hotspotTotal,
+    total: hotspot.filter || hotspot.origem ? hotspot.items.length : hotspotTotal,
     overallTotal: hotspotTotal,
+    origins: database.listHotspotOrigens(),
   });
 });
 
 app.get("/api/admin/hotspot/telefones.csv", requireAdmin, (req, res) => {
-  const { items } = listHotspotExportItems(req.query.date);
+  const { items } = listHotspotExportItems(req.query.date, req.query.origem);
   const header = [
     "numero do telefone",
     "origem",
@@ -668,9 +682,13 @@ app.get("/api/admin/hotspot/telefones.csv", requireAdmin, (req, res) => {
 
 app.get("/api/admin/hotspot/telefones.xlsx", requireAdmin, async (req, res) => {
   try {
-    const { filter, items } = listHotspotExportItems(req.query.date);
-    const buffer = await buildHotspotWorkbook(items, filter);
-    const suffix = filter ? filter.date : "todos";
+    const { filter, origem, items } = listHotspotExportItems(req.query.date, req.query.origem);
+    const buffer = await buildHotspotWorkbook(items, filter, origem);
+    const suffixParts = [filter ? filter.date : "todos"];
+    if (origem) {
+      suffixParts.push(slugify(origem));
+    }
+    const suffix = suffixParts.join("-");
 
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

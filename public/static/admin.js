@@ -10,6 +10,7 @@ const systemsTable = document.getElementById("systemsTable");
 const usersTable = document.getElementById("usersTable");
 const hotspotPhonesTable = document.getElementById("hotspotPhonesTable");
 const hotspotDateFilter = document.getElementById("hotspotDateFilter");
+const hotspotOriginFilter = document.getElementById("hotspotOriginFilter");
 const exportHotspotXlsx = document.getElementById("exportHotspotXlsx");
 const permissionSecretariaSelect = document.getElementById("permissionSecretariaSelect");
 const permissionsGrid = document.getElementById("permissionsGrid");
@@ -28,6 +29,7 @@ const state = {
   users: [],
   assignments: [],
   hotspotTelefones: [],
+  hotspotOrigins: [],
   hotspotTelefoneCount: 0,
   hotspotDiaCount: 0,
   selectedSecretariaId: null,
@@ -118,14 +120,17 @@ function getTodayInputValue() {
 function updateHotspotExportLink() {
   if (!exportHotspotXlsx) return;
 
-  const queryString = getHotspotDateQueryString();
+  const queryString = getHotspotFilterQueryString();
   exportHotspotXlsx.href = `/api/admin/hotspot/telefones.xlsx${queryString ? `?${queryString}` : ""}`;
 }
 
-function getHotspotDateQueryString(paramName = "date") {
+function getHotspotFilterQueryString(dateParamName = "date") {
   const params = new URLSearchParams();
   if (hotspotDateFilter && hotspotDateFilter.value) {
-    params.set(paramName, hotspotDateFilter.value);
+    params.set(dateParamName, hotspotDateFilter.value);
+  }
+  if (hotspotOriginFilter && hotspotOriginFilter.value) {
+    params.set("origem", hotspotOriginFilter.value);
   }
 
   return params.toString();
@@ -165,6 +170,21 @@ function renderSecretariaOptions() {
 
   if (state.selectedSecretariaId) {
     permissionSecretariaSelect.value = String(state.selectedSecretariaId);
+  }
+}
+
+function renderHotspotOriginOptions() {
+  if (!hotspotOriginFilter) return;
+
+  const currentValue = hotspotOriginFilter.value;
+  const origins = Array.from(new Set(state.hotspotOrigins || []));
+  const options = origins
+    .map((origin) => `<option value="${escapeHtml(origin)}">${escapeHtml(origin)}</option>`)
+    .join("");
+
+  hotspotOriginFilter.innerHTML = `<option value="">Todos</option>${options}`;
+  if (currentValue && origins.includes(currentValue)) {
+    hotspotOriginFilter.value = currentValue;
   }
 }
 
@@ -332,6 +352,7 @@ function renderHotspotPhonesTable() {
 function renderAll() {
   renderStats();
   renderSecretariaOptions();
+  renderHotspotOriginOptions();
   renderSecretariasTable();
   renderSystemsTable();
   renderUsersTable();
@@ -341,13 +362,14 @@ function renderAll() {
 
 async function bootstrap() {
   try {
-    const queryString = getHotspotDateQueryString("hotspotDate");
+    const queryString = getHotspotFilterQueryString("hotspotDate");
     const payload = await fetchJson(`/api/admin/bootstrap${queryString ? `?${queryString}` : ""}`);
     state.user = payload.user;
     state.secretarias = payload.secretarias;
     state.systems = payload.systems;
     state.users = payload.users;
     state.assignments = payload.assignments;
+    state.hotspotOrigins = payload.hotspotOrigins || [];
     state.hotspotTelefones = payload.hotspotTelefones || [];
     state.hotspotTelefoneCount = payload.hotspotTelefoneCount ?? state.hotspotTelefones.length;
     state.hotspotDiaCount = payload.hotspotDiaCount ?? state.hotspotTelefones.length;
@@ -359,12 +381,14 @@ async function bootstrap() {
 
 async function refreshHotspotTelefones() {
   try {
-    const queryString = getHotspotDateQueryString();
+    const queryString = getHotspotFilterQueryString();
     const payload = await fetchJson(`/api/admin/hotspot/telefones${queryString ? `?${queryString}` : ""}`);
     state.hotspotTelefones = payload.items || [];
+    state.hotspotOrigins = payload.origins || state.hotspotOrigins;
     state.hotspotTelefoneCount = payload.overallTotal ?? state.hotspotTelefoneCount;
     state.hotspotDiaCount = payload.total ?? state.hotspotTelefones.length;
     renderStats();
+    renderHotspotOriginOptions();
     renderHotspotPhonesTable();
   } catch (error) {
     setMessage(error.message, true);
@@ -609,12 +633,21 @@ logoutButton.addEventListener("click", async () => {
   window.location.href = "/login";
 });
 
+function handleHotspotFilterChange() {
+  updateHotspotExportLink();
+  refreshHotspotTelefones();
+}
+
 if (hotspotDateFilter) {
   hotspotDateFilter.value = getTodayInputValue();
-  hotspotDateFilter.addEventListener("input", () => {
-    updateHotspotExportLink();
-    refreshHotspotTelefones();
-  });
+  hotspotDateFilter.addEventListener("input", handleHotspotFilterChange);
+}
+
+if (hotspotOriginFilter) {
+  hotspotOriginFilter.addEventListener("change", handleHotspotFilterChange);
+}
+
+if (hotspotDateFilter || hotspotOriginFilter) {
   updateHotspotExportLink();
   window.setInterval(refreshHotspotTelefones, 30000);
 }

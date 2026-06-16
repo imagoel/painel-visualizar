@@ -339,6 +339,12 @@ function createDatabase(filePath) {
       ORDER BY last_seen_at ASC, id ASC
       LIMIT ?
     `),
+    hotspotOrigens: db.prepare(`
+      SELECT DISTINCT origem
+      FROM hotspot_telefones
+      WHERE origem <> ''
+      ORDER BY origem COLLATE NOCASE ASC
+    `),
     hotspotTelefoneCount: db.prepare(`
       SELECT COUNT(*) AS total
       FROM hotspot_telefones
@@ -535,6 +541,9 @@ function createDatabase(filePath) {
         firstSeenAt: item.first_seen_at,
         lastSeenAt: item.last_seen_at,
       }));
+    },
+    listHotspotOrigens() {
+      return statements.hotspotOrigens.all().map((item) => item.origem);
     },
     countHotspotTelefones() {
       return statements.hotspotTelefoneCount.get().total;
