@@ -251,6 +251,18 @@ body {
   gap: 0.45rem;
 }
 
+.visualization-meta-fields label {
+  display: grid;
+  gap: 0.25rem;
+  color: #526071;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.visualization-meta-fields span {
+  line-height: 1;
+}
+
 .visualization-option-fields input {
   width: 100%;
   border: 1px solid rgba(17, 31, 48, 0.12);

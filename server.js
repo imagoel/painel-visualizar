@@ -463,7 +463,6 @@ app.get("/api/panel/config", requireAuth, (req, res) => {
     systems,
     settings: {
       slideDuration: 30000,
-      inactivityTimeout: 30000,
     },
   });
 });

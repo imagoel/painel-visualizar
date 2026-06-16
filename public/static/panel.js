@@ -18,10 +18,8 @@ const state = {
   systems: [],
   selectedSystemIds: [],
   slideDuration: 30000,
-  inactivityTimeout: 30000,
   current: 0,
   timer: null,
-  inactivityTimer: null,
   progressStart: null,
   progressFrame: null,
   tiles: [],
@@ -177,21 +175,25 @@ function renderVisualizationOptions() {
           />
           <div class="visualization-option-fields">
             <div class="visualization-meta-fields">
-              <input
-                data-field="displayOrder"
-                type="number"
-                min="1"
-                value="${escapeHtml(system.position || index + 1)}"
-                placeholder="Ordem"
-              />
-              <input
-                data-field="displaySeconds"
-                type="number"
-                min="1"
-                max="3600"
-                value="${escapeHtml(system.displaySeconds || 10)}"
-                placeholder="Tempo (s)"
-              />
+              <label>
+                <span>Ordem</span>
+                <input
+                  data-field="displayOrder"
+                  type="number"
+                  min="1"
+                  value="${escapeHtml(system.position || index + 1)}"
+                />
+              </label>
+              <label>
+                <span>Tempo (s)</span>
+                <input
+                  data-field="displaySeconds"
+                  type="number"
+                  min="1"
+                  max="3600"
+                  value="${escapeHtml(system.displaySeconds || 10)}"
+                />
+              </label>
             </div>
             <input data-field="name" type="text" value="${escapeHtml(system.name)}" placeholder="Nome do sistema ou banner" />
             <input data-field="url" type="text" value="${escapeHtml(system.url)}" placeholder="Link opcional do sistema" />
@@ -412,18 +414,8 @@ function pauseSlideshow() {
   resetProgress();
 }
 
-function resetInactivity() {
-  if (state.isEditing) return;
-
-  clearTimeout(state.inactivityTimer);
-  state.inactivityTimer = setTimeout(() => {
-    startSlideshow();
-  }, state.inactivityTimeout);
-}
-
 function openVisualizationModal() {
   state.isEditing = true;
-  clearTimeout(state.inactivityTimer);
   pauseSlideshow();
   renderVisualizationOptions();
   visualizationModal.classList.remove("is-hidden");
@@ -653,7 +645,6 @@ async function bootstrap() {
     state.selectedSystemIds = state.availableSystems.map((system) => String(system.id));
     state.systems = getVisibleSystems();
     state.slideDuration = panelData.settings.slideDuration;
-    state.inactivityTimeout = panelData.settings.inactivityTimeout;
 
     if (state.user.role === "admin") {
       adminButton.classList.remove("is-hidden");
