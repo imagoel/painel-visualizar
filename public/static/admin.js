@@ -44,6 +44,17 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function formatHotspotOrigin(value) {
+  const origin = String(value || "").trim();
+  const labels = {
+    "hotspot-regulação": "Regulação",
+    "hotspot-regulacao": "Regulação",
+    "hotspot-cms": "CMS",
+  };
+
+  return labels[origin] || origin || "-";
+}
+
 function readMediaFile(file) {
   if (!file) return Promise.resolve("");
 
@@ -179,7 +190,7 @@ function renderHotspotOriginOptions() {
   const currentValue = hotspotOriginFilter.value;
   const origins = Array.from(new Set(state.hotspotOrigins || []));
   const options = origins
-    .map((origin) => `<option value="${escapeHtml(origin)}">${escapeHtml(origin)}</option>`)
+    .map((origin) => `<option value="${escapeHtml(origin)}">${escapeHtml(formatHotspotOrigin(origin))}</option>`)
     .join("");
 
   hotspotOriginFilter.innerHTML = `<option value="">Todos</option>${options}`;
@@ -338,7 +349,7 @@ function renderHotspotPhonesTable() {
       (item) => `
         <tr>
           <td><strong>${escapeHtml(item.telefone)}</strong></td>
-          <td>${escapeHtml(item.origem || "-")}</td>
+          <td>${escapeHtml(formatHotspotOrigin(item.origem))}</td>
           <td>${escapeHtml(item.mac || "-")}</td>
           <td>${escapeHtml(item.ip || "-")}</td>
           <td>${escapeHtml(item.totalAcessos || 1)}</td>

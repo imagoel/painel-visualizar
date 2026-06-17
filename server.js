@@ -276,6 +276,17 @@ function normalizeHotspotOrigemFilter(value) {
   return String(value || "").trim().slice(0, 80);
 }
 
+function formatHotspotOrigemLabel(value) {
+  const origem = String(value || "").trim();
+  const labels = {
+    "hotspot-regulação": "Regulação",
+    "hotspot-regulacao": "Regulação",
+    "hotspot-cms": "CMS",
+  };
+
+  return labels[origem] || origem;
+}
+
 function listHotspotExportItems(date, origem) {
   const filter = getHotspotDateFilter(date);
   const origemFilter = normalizeHotspotOrigemFilter(origem);
@@ -337,7 +348,7 @@ async function buildHotspotWorkbook(items, filter, origem) {
   const filters = [];
   filters.push(filter ? `acesso em ${filter.label}` : "todos os registros");
   if (origem) {
-    filters.push(`hotspot ${origem}`);
+    filters.push(`hotspot ${formatHotspotOrigemLabel(origem)}`);
   }
   worksheet.spliceRows(2, 0, [`Filtro: ${filters.join(" / ")}`]);
   worksheet.mergeCells("A1:D1");
@@ -360,7 +371,7 @@ async function buildHotspotWorkbook(items, filter, origem) {
   items.forEach((item) => {
     worksheet.addRow({
       telefone: item.telefone,
-      origem: item.origem,
+      origem: formatHotspotOrigemLabel(item.origem),
       mac: item.mac,
       lastSeenAt: formatCsvDateTime(item.lastSeenAt),
     });
@@ -668,7 +679,7 @@ app.get("/api/admin/hotspot/telefones.csv", requireAdmin, (req, res) => {
   ];
   const rows = items.map((item) => [
     item.telefone,
-    item.origem,
+    formatHotspotOrigemLabel(item.origem),
     item.mac,
     formatCsvDateTime(item.lastSeenAt),
   ]);
