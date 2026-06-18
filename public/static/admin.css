@@ -237,7 +237,9 @@ body {
 .hotspot-export-actions {
   display: flex;
   align-items: end;
+  flex-wrap: wrap;
   gap: 0.7rem;
+  justify-content: flex-end;
 }
 
 .hotspot-export-actions label {
@@ -251,6 +253,10 @@ body {
 .hotspot-export-actions input,
 .hotspot-export-actions select {
   min-width: 170px;
+}
+
+.hotspot-export-actions input[type="date"] {
+  width: 170px;
 }
 
 .stack-form {
