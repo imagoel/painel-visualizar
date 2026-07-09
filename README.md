@@ -76,10 +76,10 @@ http://localhost:3000
 ## Credenciais iniciais
 
 - Admin
-  - E-mail: `admin@amargosa.ba.gov.br`
+  - Usuario: `admin`
   - Senha: `admin123`
 - Secretaria SEAFI
-  - E-mail: `seafi@amargosa.ba.gov.br`
+  - Usuario: `seafi`
   - Senha: `seafi123`
 
 Recomendacao: altere as senhas iniciais apos subir o sistema em producao.

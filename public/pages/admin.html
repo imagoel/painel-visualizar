@@ -183,7 +183,7 @@
 
             <form id="createUserForm" class="stack-form users-form">
               <input name="name" type="text" placeholder="Nome do usuario" required />
-              <input name="email" type="email" placeholder="email@amargosa.ba.gov.br" required />
+              <input name="email" type="text" autocomplete="username" placeholder="Usuario" required />
               <input name="password" type="password" placeholder="Senha inicial" required />
               <select name="role" required>
                 <option value="secretaria">Usuario de setor</option>
@@ -198,7 +198,7 @@
                 <thead>
                   <tr>
                     <th>Nome</th>
-                    <th>E-mail</th>
+                    <th>Usuario</th>
                     <th>Perfil</th>
                     <th>Setor</th>
                     <th>Nova senha</th>

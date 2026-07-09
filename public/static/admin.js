@@ -278,7 +278,7 @@ function renderUsersTable() {
       (user) => `
         <tr data-id="${user.id}">
           <td><input data-field="name" type="text" value="${escapeHtml(user.name)}" /></td>
-          <td><input data-field="email" type="email" value="${escapeHtml(user.email)}" /></td>
+          <td><input data-field="email" type="text" autocomplete="username" value="${escapeHtml(user.email)}" /></td>
           <td>
             <select data-field="role">
               <option value="secretaria" ${user.role === "secretaria" ? "selected" : ""}>Setor</option>

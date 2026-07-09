@@ -434,7 +434,7 @@ app.post("/api/auth/login", (req, res) => {
   const password = String(req.body.password || "").trim();
 
   if (!email || !password) {
-    return res.status(400).json({ message: "Informe e-mail e senha." });
+    return res.status(400).json({ message: "Informe usuario e senha." });
   }
 
   const user = database.getUserByEmail(email);
@@ -830,7 +830,7 @@ app.post("/api/admin/users", requireAdmin, (req, res) => {
   try {
     const payload = normalizeUserPayload(req.body);
     if (!payload.name || !payload.email || !payload.password) {
-      return res.status(400).json({ message: "Nome, e-mail e senha sao obrigatorios." });
+      return res.status(400).json({ message: "Nome, usuario e senha sao obrigatorios." });
     }
 
     const user = database.createUser(payload);
@@ -848,7 +848,7 @@ app.put("/api/admin/users/:id", requireAdmin, (req, res) => {
     });
 
     if (!payload.name || !payload.email) {
-      return res.status(400).json({ message: "Nome e e-mail sao obrigatorios." });
+      return res.status(400).json({ message: "Nome e usuario sao obrigatorios." });
     }
 
     const user = database.updateUser(payload);
