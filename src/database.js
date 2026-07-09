@@ -237,7 +237,7 @@ function seedIfNeeded(db) {
 
     insertUser.run(
       "Administrador",
-      "admin",
+      "admin@amargosa.ba.gov.br",
       bcrypt.hashSync("admin123", 10),
       "admin",
       seafi.id
@@ -245,7 +245,7 @@ function seedIfNeeded(db) {
 
     insertUser.run(
       "SEAFI",
-      "seafi",
+      "seafi@amargosa.ba.gov.br",
       bcrypt.hashSync("seafi123", 10),
       "secretaria",
       seafi.id
